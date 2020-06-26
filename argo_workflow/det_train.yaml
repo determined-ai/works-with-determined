@@ -1,0 +1,67 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: train-model-
+spec:
+  entrypoint: train-model
+  arguments:
+    parameters:
+    - name: mlrepo
+      value: https://github.com/determined-ai/determined.git
+    - name: experiment
+      value: examples/official/trial/mnist_pytorch/const.yaml
+    - name: context
+      value: examples/official/trial/mnist_pytorch/
+    - name: detmaster
+      value: DETERMINED_MASTER_ADDRESS:PORT
+  templates:
+  - name: train-model
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    dag:
+      tasks:
+      - name: det-train
+        template: determined-train
+        arguments:
+          parameters:
+          - name: mlrepo
+            value: "{{workflow.parameters.mlrepo}}"
+          - name: config
+            value: "{{workflow.parameters.experiment}}"
+          - name: context
+            value: "{{workflow.parameters.context}}"
+          - name: detmaster
+            value: "{{workflow.parameters.detmaster}}"
+
+  - name: determined-train
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    inputs:
+      parameters:
+      - name: mlrepo
+      - name: detmaster
+      - name: context
+      - name: config
+      artifacts:
+      - name: mlrepo
+        path: /src
+        git:
+          repo: "{{inputs.parameters.mlrepo}}"
+          revision: "master"
+    outputs:
+      artifacts:
+      - name: checkpoint
+        path: /tmp/checkpoint/
+      parameters:
+      - name: experiment-id
+        valueFrom:
+          path: /tmp/experiment_id.txt
+    container:
+      image: davidhershey/detcli:1.5
+      imagePullPolicy: Always
+      command: [python, run_det_and_wait.py, "/src/{{inputs.parameters.config}}", "/src/{{inputs.parameters.context}}"]
+      env:
+      - name: DET_MASTER
+        value:  "{{inputs.parameters.detmaster}}"

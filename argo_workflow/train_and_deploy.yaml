@@ -1,0 +1,132 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: train-and-deploy-
+spec:
+  entrypoint: train-and-deploy
+  arguments:
+    parameters:
+    - name: mlrepo
+      value: https://github.com/determined-ai/determined.git
+    - name: experiment
+      value: examples/official/trial/mnist_pytorch/const.yaml
+    - name: context
+      value: examples/official/trial/mnist_pytorch/
+    - name: detmaster
+      value: DETERMINED_MASTER_ADDRESS:PORT
+    - name: deployment-name
+      value: mnist-prod-argo
+    - name: deployment-namespace
+      value: david
+    - name: deployment-image
+      value: davidhershey/seldon-mnist:1.3
+  templates:
+  - name: train-and-deploy
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    dag:
+      tasks:
+      - name: det-train
+        template: determined-train
+        arguments:
+          parameters:
+          - name: mlrepo
+            value: "{{workflow.parameters.mlrepo}}"
+          - name: config
+            value: "{{workflow.parameters.experiment}}"
+          - name: context
+            value: "{{workflow.parameters.context}}"
+          - name: detmaster
+            value: "{{workflow.parameters.detmaster}}"
+      - name: deploy
+        dependencies: [det-train]
+        template: seldon-deploy
+        arguments:
+          parameters:
+          - name: experimentid
+            value: "{{tasks.det-train.outputs.parameters.experiment-id}}"
+          - name: deployment-name
+            value: "{{workflow.parameters.deployment-name}}"
+          - name: deployment-namespace
+            value: "{{workflow.parameters.deployment-namespace}}"
+          - name: detmaster
+            value: "{{workflow.parameters.detmaster}}"
+          - name: image
+            value: "{{workflow.parameters.deployment-image}}"
+
+  - name: seldon-deploy
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    inputs:
+      parameters:
+      - name: deployment-name
+      - name: deployment-namespace
+      - name: detmaster
+      - name: experimentid
+      - name: image
+    outputs:
+      parameters:
+      - name: endpoint
+        valueFrom:
+          path: /tmp/endpoint.txt
+    container:
+      image: davidhershey/seldon-create:1.1
+      imagePullPolicy: Always
+      command:
+      - python
+      - create_seldon_deployment.py
+      - "{{inputs.parameters.deployment-name}}"
+      - "{{inputs.parameters.deployment-namespace}}"
+      - "{{inputs.parameters.detmaster}}"
+      - "{{inputs.parameters.experimentid}}"
+      - --image
+      - "{{inputs.parameters.image}}"
+
+  - name: test-deploy
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    inputs:
+      parameters:
+      - name: endpoint
+    container:
+      image: davidhershey/test-endpoint:1.0
+      imagePullPolicy: Always
+      command:
+      - python
+      - test.py
+      - "{{inputs.parameters.endpoint}}"
+
+  - name: determined-train
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    inputs:
+      parameters:
+      - name: mlrepo
+      - name: detmaster
+      - name: context
+      - name: config
+      artifacts:
+      - name: mlrepo
+        path: /src
+        git:
+          repo: "{{inputs.parameters.mlrepo}}"
+          revision: "master"
+    outputs:
+      artifacts:
+      - name: checkpoint
+        path: /tmp/checkpoint/
+      parameters:
+      - name: experiment-id
+        valueFrom:
+          path: /tmp/experiment_id.txt
+    container:
+      image: davidhershey/detcli:1.5
+      imagePullPolicy: Always
+      command: [python, run_det_and_wait.py, "/src/{{inputs.parameters.config}}", "/src/{{inputs.parameters.context}}"]
+      env:
+      - name: DET_MASTER
+        value:  "{{inputs.parameters.detmaster}}"

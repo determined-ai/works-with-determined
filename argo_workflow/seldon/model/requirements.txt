@@ -1,0 +1,8 @@
+seldon-core
+determined==0.12.8
+torch
+Pillow
+numpy
+scikit-image
+torchvision
+python_pachyderm
