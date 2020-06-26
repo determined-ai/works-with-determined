@@ -1,0 +1,27 @@
+apiVersion: machinelearning.seldon.io/v1alpha2
+kind: SeldonDeployment
+metadata:
+  name: catdog-model
+spec:
+  name: catdog-model
+  predictors:
+  - componentSpecs:
+    - spec:
+        containers:
+        - name: classifier
+          image: YOUR_DOCKER_IMAGE
+    graph:
+      children: []
+      parameters:
+        - name: det_master
+          type: STRING
+          value: "DET_MASTER_ADDR"
+        - name: experiment_id
+          type: INT
+          value: "1"
+      endpoint:
+        type: REST
+      name: classifier
+      type: MODEL
+    name: catdog-model
+    replicas: 1

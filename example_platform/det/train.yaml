@@ -1,0 +1,20 @@
+description: catdog_single_train
+data:
+  pachyderm:
+    host: PACHD_HOST
+    port: 650
+    repo: split_and_compress
+    branch: master
+hyperparameters:
+  learning_rate: .005
+  global_batch_size: 16
+  weight_decay: 1e-4
+  nesterov: True
+searcher:
+  name: single
+  metric: accuracy
+  max_steps: 100
+  smaller_is_better: false
+entrypoint: model_def:CatDogModel
+batches_per_step: 5
+min_validation_period: 10
