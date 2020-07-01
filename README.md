@@ -21,6 +21,8 @@ This repository compiles a series of example integrations between [Determined](h
 
 * [Argo](https://argoproj.github.io/)
   * An example of using Determined within an Argo workflow to train a model then automatically deploy it with Seldon Core can be found [in the argo workflow example](argo_workflow/README.md)
+* [Airflow](https://airflow.apache.org/)
+  * An example of using Determined within an Airflow workflow to train a model then deploy it into Kubernetes with Seldon core can be found [in the airflow example](airflow/README.md)
 
 
 ## Platforms
