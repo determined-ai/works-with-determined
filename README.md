@@ -1,6 +1,6 @@
-# Example Determined Integrations
+# Works With Determined
 
-This repository compiles a series of example integrations between [Determined](https://github.com/determined-ai/determined) and other tools commonly used for machine learning workflows.  These code pieces are all meant to be examples of how you could use Determined with your existing tools.
+This repository highlights tools in the ML ecosystem that work well with [Determined](https://github.com/determined-ai/determined).  It contains working examples of  full end to end machine learning workflows that are enabled with the right sets of tools.
 
 ## Data Tools
 
