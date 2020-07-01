@@ -26,7 +26,7 @@ default_args = {
 }
 
 dag = DAG(
-    'det_train',
+    'train_and_deploy_mnist',
     default_args=default_args,
     description='Train a model with determined',
     schedule_interval=timedelta(days=1),
