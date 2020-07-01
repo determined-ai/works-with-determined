@@ -15,7 +15,7 @@ This repository compiles a series of example integrations between [Determined](h
   * An example of using Seldon as a part of an end to end platform can be found [in the platform example](example_platform/README.md)
   * An example demonstrating automatic Seldon serving of models trained in Determined can be found [in the argo workflow example](argo_workflow/README.md)
 * [Spark](https://spark.apache.org/)
-  * An example that uses Spark to perform batch inference can be found [in the spark example](spark_example/README.md)
+  * An example that uses Spark to perform batch inference can be found [in the spark example](spark_ecosystem/README.md)
 
 ## Workflow Tools
 
