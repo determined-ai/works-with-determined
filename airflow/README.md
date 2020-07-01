@@ -1,4 +1,4 @@
-# Using Determined + Argo for End to End Workflows
+# Using Determined + Airflow for End to End Workflows
 <p align="center">
 <img src="https://github.com/determined-ai/determined/raw/master/determined-logo.png"></p>
 
