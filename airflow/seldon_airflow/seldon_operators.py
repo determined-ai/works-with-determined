@@ -19,7 +19,37 @@ def seldon_deploy(ds, **kwargs):
     task_instance = kwargs['task_instance']
     experiment_id = task_instance.xcom_pull(task_ids='train')
 
-    template = yaml.load(open('serve.yaml', 'r'), Loader=Loader)
+    template = """
+    apiVersion: machinelearning.seldon.io/v1alpha2
+    kind: SeldonDeployment
+    metadata:
+      name: mnist-prod
+    spec:
+      name: mnist-prod
+      predictors:
+      - componentSpecs:
+        - spec:
+            containers:
+            - name: classifier
+              image: davidhershey/seldon-mnist:1.3
+        graph:
+          children: []
+          parameters:
+            - name: det_master
+              type: STRING
+              value: "DET_MASTER_ADDR"
+            - name: experiment_id
+              type: INT
+              value: "1"
+          endpoint:
+            type: REST
+          name: classifier
+          type: MODEL
+        name: mnist-prod
+        replicas: 1
+    """
+    template = yaml.safe_load(template)
+    # template = yaml.load(open('serve.yaml', 'r'), Loader=Loader)
 
     config.load_kube_config()
     api = client.CustomObjectsApi()
@@ -32,7 +62,7 @@ def seldon_deploy(ds, **kwargs):
 
     template["spec"]["predictors"][0]["graph"]["parameters"] = [
         {'name': 'det_master', 'type': 'STRING', 'value': det_master},
-        {'name': 'experiment_id', 'type': 'INT', 'value': experiment_id},
+        {'name': 'experiment_id', 'type': 'INT', 'value': str(experiment_id)},
     ]
 
     template["spec"]["predictors"][0]["componentSpecs"][0]['spec']['containers'][0]['image'] = image
@@ -94,5 +124,5 @@ def seldon_deploy(ds, **kwargs):
     v1 = client.CoreV1Api()
     svc = v1.read_namespaced_service('istio-ingressgateway', 'istio-system')
     gateway = svc.to_dict()['status']['load_balancer']['ingress'][0]['hostname']
-    endpoint =  "http://" + gateway + f'/seldon/{namespace}/{name}/api/v1.0/predictions'
+    endpoint = "http://" + gateway + f'/seldon/{namespace}/{name}/api/v1.0/predictions'
     return endpoint

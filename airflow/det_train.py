@@ -12,13 +12,13 @@ default_args = {
     'email': ['david@determined.ai'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': 0,
     'params': {
         'git_repo': 'https://github.com/determined-ai/determined.git',
         'config': 'examples/official/trial/mnist_pytorch/const.yaml',
         'context': 'examples/official/trial/mnist_pytorch/',
         'det_master': 'DET_MASTER',
-        'deploy_name': 'mnist_airflow_prod',
+        'deploy_name': 'mnist-airflow-prod',
         'deploy_namespace': 'default',
         'deploy_image': 'davidhershey/seldon-mnist:1.3'
     },
@@ -52,7 +52,5 @@ deploy = PythonOperator(
     task_id='deploy',
     dag=dag,
 )
-
-
 
 train >> wait >> deploy
