@@ -1,6 +1,7 @@
 from datetime import timedelta
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.models import Variable
+from airflow.operators.python_operator import PythonOperator, BranchPythonOperator
 from airflow.utils.dates import days_ago
 from det_airflow.det_operators import clone_and_create_experiment, wait_for_experiment
 from seldon_airflow.seldon_operators import seldon_deploy
@@ -46,6 +47,45 @@ wait = PythonOperator(
     dag=dag,
 )
 
+
+def make_deploy_decision(**kwargs):
+    variable_name = kwargs['params']['deploy_name'] + '-best-metric'
+    task_instance = kwargs['task_instance']
+    experiment_id = task_instance.xcom_pull(task_ids='train')
+    best_metric = task_instance.xcom_pull(task_ids='wait')
+    last_best = Variable.get(variable_name, default_var=None)
+    if last_best is None or best_metric < float(last_best):
+        Variable.set(variable_name, best_metric)
+        return 'deploy'
+    else:
+        return 'failure'
+
+
+decision = BranchPythonOperator(
+        task_id='branching',
+        python_callable=make_deploy_decision,
+        provide_context=True,
+        dag=dag
+)
+
+
+def print_failure(**kwargs):
+    det_master = kwargs['params']['det_master']
+    task_instance = kwargs['task_instance']
+    best_metric = task_instance.xcom_pull(task_ids='wait')
+    last_best = Variable.get('mnist_best_eval', default_var=None)
+    message = f"Validation metric ({best_metric}) was less than previous best: {last_best}"
+    print(message)
+    return message
+
+
+failure = PythonOperator(
+    python_callable=print_failure,
+    provide_context=True,
+    task_id='failure',
+    dag=dag,
+)
+
 deploy = PythonOperator(
     python_callable=seldon_deploy,
     provide_context=True,
@@ -53,4 +93,5 @@ deploy = PythonOperator(
     dag=dag,
 )
 
-train >> wait >> deploy
+train >> wait >> decision
+decision >> [deploy, failure]
