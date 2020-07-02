@@ -4,6 +4,8 @@
 
 This repository contains an example [Airflow DAG](https://airflow.apache.org/) that trains a model [using Determined](https://github.com/determined-ai/determined) and then deploys that model [using Seldon Core](https://github.com/SeldonIO/seldon-core).
 
+<p align="center">
+<img src="dag.png"></p>
 ## Prerequisites
 Your airflow executor will need to have the Python packages in (the requirements file)[requirements.txt] in order to run this workflow.  Alternatively, you can bundle this DAG with a virtual environment that has those dependencies installed.
 
