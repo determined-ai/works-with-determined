@@ -6,7 +6,9 @@ This repository contains an example [Airflow DAG](https://airflow.apache.org/) t
 
 <p align="center">
 <img src="dag.png" width="500px"></p>
+
 ## Prerequisites
+
 Your airflow executor will need to have the Python packages in (the requirements file)[requirements.txt] in order to run this workflow.  Alternatively, you can bundle this DAG with a virtual environment that has those dependencies installed.
 
 Additionally, your airflow executor will need access to a Kuberenetes cluster config that allows it to create `Seldon Deployments`.
