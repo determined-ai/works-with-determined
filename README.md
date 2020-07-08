@@ -6,6 +6,8 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
 
 * [Pachyderm](pachyderm.com)
   * An example Pachyderm integration can be found [in the platform example](example_platform/README.md)
+* [DVC](dvc.org)
+  * An example of using DVC to version data for Determined can be found [in the DVC example](dvc/README.md)
 * [Delta Lake](delta.io)
   * An example of reading data from a Delta table to train a model in Determined can be found [in the spark example](spark_example/README.md)
 
