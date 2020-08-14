@@ -16,9 +16,9 @@ spec:
         - name: det_master
           type: STRING
           value: "DET_MASTER_ADDR"
-        - name: experiment_id
-          type: INT
-          value: "1"
+        - name: model_name
+          type: STRING
+          value: "mnist-prod"
       endpoint:
         type: REST
       name: classifier

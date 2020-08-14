@@ -24,14 +24,15 @@ class MNISTModel(object):
     Model template. You can load your model parameters in __init__ from a location accessible at runtime
     """
 
-    def __init__(self, det_master=None, experiment_id=None):
+    def __init__(self, det_master=None, model_name=None):
         """
         Add any initialization parameters. These will be passed at runtime from the graph definition parameters defined in your seldondeployment kubernetes resource manifest.
         """
-        logging.info(f"Loading checkpoint {experiment_id} from master at {det_master}")
-        checkpoint = Determined(master=det_master).get_experiment(experiment_id).top_checkpoint()
+        logging.info(f"Loading model {model_name} from master at {det_master}")
+        checkpoint = Determined(master=det_master).get_model(model_name).get_version()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = checkpoint.load(map_location=self.device)
+        trial = checkpoint.load(map_location=self.device)
+        self.model = trial.model
         logging.info("Loaded checkpoint")
         self.transform = get_transform()
 

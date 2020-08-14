@@ -14,8 +14,8 @@ def main():
     parser.add_argument('name', type=str, help='deployment name')
     parser.add_argument('namespace', type=str, help='deployment namespace')
     parser.add_argument('det_master', type=str, help='determined master address')
-    parser.add_argument('experiment_id', type=str, help='experiment to deploy')
-    parser.add_argument('--image', type=str, help='model image', default='davidhershey/seldon-mnist:1.3')
+    parser.add_argument('model_name', type=str, help='experiment to deploy')
+    parser.add_argument('--image', type=str, help='model image', default='davidhershey/seldon-mnist:1.4')
     parser.add_argument('--local', action='store_true')
     args = parser.parse_args()
 
@@ -36,7 +36,7 @@ def main():
 
     template["spec"]["predictors"][0]["graph"]["parameters"] = [
         {'name': 'det_master', 'type': 'STRING', 'value': args.det_master},
-        {'name': 'experiment_id', 'type': 'INT', 'value': args.experiment_id},
+        {'name': 'model_name', 'type': 'STRING', 'value': args.model_name},
     ]
 
     template["spec"]["predictors"][0]["componentSpecs"][0]['spec']['containers'][0]['image'] = args.image

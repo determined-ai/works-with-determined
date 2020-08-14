@@ -8,44 +8,59 @@ spec:
     parameters:
     - name: mlrepo
       value: https://github.com/determined-ai/determined.git
+    - name: branch
+      value: release_0_12_13
     - name: experiment
       value: examples/official/trial/mnist_pytorch/const.yaml
     - name: context
       value: examples/official/trial/mnist_pytorch/
     - name: detmaster
       value: DETERMINED_MASTER_ADDRESS:PORT
+    - name: model-name
+      value: mnist-prod
     - name: deployment-name
       value: mnist-prod-argo
     - name: deployment-namespace
       value: david
     - name: deployment-image
-      value: davidhershey/seldon-mnist:1.3
+      value: davidhershey/seldon-mnist:1.6
   templates:
   - name: train-and-deploy
     metadata:
       annotations:
         sidecar.istio.io/inject: "false"
-    dag:
-      tasks:
-      - name: det-train
+    steps:
+    - - name: det-train
         template: determined-train
         arguments:
           parameters:
           - name: mlrepo
             value: "{{workflow.parameters.mlrepo}}"
+          - name: branch
+            value: "{{workflow.parameters.branch}}"
           - name: config
             value: "{{workflow.parameters.experiment}}"
           - name: context
             value: "{{workflow.parameters.context}}"
           - name: detmaster
             value: "{{workflow.parameters.detmaster}}"
-      - name: deploy
-        dependencies: [det-train]
-        template: seldon-deploy
+    - - name: version-and-decide
+        template: determined-decision
         arguments:
           parameters:
+          - name: detmaster
+            value: "{{workflow.parameters.detmaster}}"
           - name: experimentid
-            value: "{{tasks.det-train.outputs.parameters.experiment-id}}"
+            value: "{{steps.det-train.outputs.parameters.experiment-id}}"
+          - name: model-name
+            value: "{{workflow.parameters.model-name}}"
+    - - name: deploy
+        template: seldon-deploy
+        when: "{{steps.version-and-decide.outputs.parameters.decision}} == yes"
+        arguments:
+          parameters:
+          - name: model-name
+            value: "{{workflow.parameters.model-name}}"
           - name: deployment-name
             value: "{{workflow.parameters.deployment-name}}"
           - name: deployment-namespace
@@ -54,6 +69,13 @@ spec:
             value: "{{workflow.parameters.detmaster}}"
           - name: image
             value: "{{workflow.parameters.deployment-image}}"
+    - - name: no-deploy
+        template: echo
+        when: "{{steps.version-and-decide.outputs.parameters.decision}} == no"
+        arguments:
+          parameters:
+          - name: message
+            value: 'Model was worse, not deploying'
 
   - name: seldon-deploy
     metadata:
@@ -64,7 +86,7 @@ spec:
       - name: deployment-name
       - name: deployment-namespace
       - name: detmaster
-      - name: experimentid
+      - name: model-name
       - name: image
     outputs:
       parameters:
@@ -72,7 +94,7 @@ spec:
         valueFrom:
           path: /tmp/endpoint.txt
     container:
-      image: davidhershey/seldon-create:1.1
+      image: davidhershey/seldon-create:1.2
       imagePullPolicy: Always
       command:
       - python
@@ -80,7 +102,7 @@ spec:
       - "{{inputs.parameters.deployment-name}}"
       - "{{inputs.parameters.deployment-namespace}}"
       - "{{inputs.parameters.detmaster}}"
-      - "{{inputs.parameters.experimentid}}"
+      - "{{inputs.parameters.model-name}}"
       - --image
       - "{{inputs.parameters.image}}"
 
@@ -106,6 +128,7 @@ spec:
     inputs:
       parameters:
       - name: mlrepo
+      - name: branch
       - name: detmaster
       - name: context
       - name: config
@@ -114,19 +137,47 @@ spec:
         path: /src
         git:
           repo: "{{inputs.parameters.mlrepo}}"
-          revision: "master"
+          revision: "{{inputs.parameters.branch}}"
     outputs:
-      artifacts:
-      - name: checkpoint
-        path: /tmp/checkpoint/
       parameters:
       - name: experiment-id
         valueFrom:
           path: /tmp/experiment_id.txt
     container:
-      image: davidhershey/detcli:1.5
+      image: davidhershey/detcli:1.8
       imagePullPolicy: Always
       command: [python, run_det_and_wait.py, "/src/{{inputs.parameters.config}}", "/src/{{inputs.parameters.context}}"]
       env:
       - name: DET_MASTER
         value:  "{{inputs.parameters.detmaster}}"
+
+  - name: determined-decision
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    inputs:
+      parameters:
+      - name: detmaster
+      - name: experimentid
+      - name: model-name
+    outputs:
+      parameters:
+      - name: decision
+        valueFrom:
+          path: /tmp/decision.txt
+    container:
+      image: davidhershey/detcli:1.8
+      imagePullPolicy: Always
+      command: [python, check_and_register.py, "{{inputs.parameters.experimentid}}", "{{inputs.parameters.model-name}}"]
+      env:
+      - name: DET_MASTER
+        value:  "{{inputs.parameters.detmaster}}"
+
+  - name: echo
+    inputs:
+      parameters:
+      - name: message
+    container:
+      image: alpine:3.6
+      command: [sh, -c]
+      args: ["echo \"{{inputs.parameters.message}}\""]

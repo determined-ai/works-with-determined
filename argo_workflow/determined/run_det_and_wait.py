@@ -29,8 +29,5 @@ def main():
     with open('/tmp/experiment_id.txt', 'w') as f:
         f.write(str(experiment_id))
 
-    checkpoint = Determined().get_experiment(experiment_id).top_checkpoint()
-    checkpoint.download(path="/tmp/checkpoint/")
-
 if __name__ == '__main__':
     main()
