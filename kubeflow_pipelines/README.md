@@ -1,15 +1,17 @@
-# Using Determined + Argo for End to End Workflows
+# Using Determined + Kubeflow Pipelines
 <p align="center">
 <img src="https://github.com/determined-ai/determined/raw/master/determined-logo.png"></p>
 
 
-This repository contains an example [Argo Workflow](https://github.com/argoproj/argo) that trains a model [using Determined](https://github.com/determined-ai/determined) and then deploys that model [using Seldon Core](https://github.com/SeldonIO/seldon-core).  Argo Workflows are an excellent tool for creating repeatable, scalable workflows in Kubernetes.
+This repository contains an example [Kubeflow Pipeline](https://www.kubeflow.org/docs/pipelines/overview/pipelines-overview/) that trains a model [using Determined](https://github.com/determined-ai/determined), versions that model using the Determined model registry, then deploys that model [using Seldon Core](https://github.com/SeldonIO/seldon-core).  Kubeflow pipelines are excellent ways to create repeatable, scalable workflows in Kubernetes -- perfect for things like retraining pipelines for deep learning.
+
+<img src="resources/pipeline_screenshot.png"></p>
 
 
 ## Usage
 
 ### Prerequisites
-Before running this example, you'll need a Kubernetes cluster with Seldon, Istio, and Argo installed.  One of the easiest ways to install all three is [via the Kubeflow project](https://github.com/kubeflow/kubeflow), however a standalone installation is certainly possible.  This example is built to work with a standard Kubeflow installation.
+Before running this example, you'll need a Kubernetes cluster with [Kubeflow installed](https://github.com/kubeflow/kubeflow).
 
 ### Setup
 For this example to work, you'll need to configure the Kubernetes `serviceaccount` used to be able to create seldon deployments and read istio services.  They'll probably look something like this:
@@ -46,8 +48,10 @@ subjects:
   namespace: your-namespace
 ```
 
-### Running the Workflow
-To run the workflow, simply run
+### Compile the Kubeflow Pipeline
+To compile the pipeline, simply use:
 ```bash
-argo submit -n your-namespace train_and_deploy.yaml --watch
+python create_pipeline.py
 ```
+
+You can then upload the pipeline via the Kubeflow UI, and create a run there.

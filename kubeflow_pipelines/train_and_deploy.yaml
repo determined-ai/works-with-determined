@@ -1,0 +1,470 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: determined-submit-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.0.0, pipelines.kubeflow.org/pipeline_compilation_time: '2020-08-24T18:08:59.848856',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Submit an experiment with
+      Determined", "inputs": [{"name": "detmaster"}, {"default": "https://github.com/determined-ai/determined.git",
+      "name": "mlrepo", "optional": true}, {"default": "0.13.0", "name": "branch",
+      "optional": true}, {"default": "examples/official/trial/mnist_pytorch/const.yaml",
+      "name": "config", "optional": true}, {"default": "examples/official/trial/mnist_pytorch/",
+      "name": "context", "optional": true}, {"default": "mnist-prod", "name": "model_name",
+      "optional": true}, {"default": "mnist-prod-kf", "name": "deployment_name", "optional":
+      true}, {"default": "david", "name": "deployment_namespace", "optional": true},
+      {"default": "davidhershey/seldon-mnist:1.6", "name": "image", "optional": true}],
+      "name": "Determined Submit"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.0.0}
+spec:
+  entrypoint: determined-submit
+  templates:
+  - name: condition-Deploy-1
+    inputs:
+      parameters:
+      - {name: deployment_name}
+      - {name: deployment_namespace}
+      - {name: detmaster}
+      - {name: image}
+      - {name: model_name}
+    dag:
+      tasks:
+      - name: create-seldon-deployment
+        template: create-seldon-deployment
+        arguments:
+          parameters:
+          - {name: deployment_name, value: '{{inputs.parameters.deployment_name}}'}
+          - {name: deployment_namespace, value: '{{inputs.parameters.deployment_namespace}}'}
+          - {name: detmaster, value: '{{inputs.parameters.detmaster}}'}
+          - {name: image, value: '{{inputs.parameters.image}}'}
+          - {name: model_name, value: '{{inputs.parameters.model_name}}'}
+  - name: condition-No-Deploy-2
+    dag:
+      tasks:
+      - {name: print-op, template: print-op}
+  - name: create-pipeline-volume
+    resource:
+      action: create
+      manifest: |
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: '{{workflow.name}}-mlrepo-pvc'
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 3Gi
+    outputs:
+      parameters:
+      - name: create-pipeline-volume-manifest
+        valueFrom: {jsonPath: '{}'}
+      - name: create-pipeline-volume-name
+        valueFrom: {jsonPath: '{.metadata.name}'}
+      - name: create-pipeline-volume-size
+        valueFrom: {jsonPath: '{.status.capacity.storage}'}
+  - name: create-seldon-deployment
+    container:
+      command: [python, create_seldon_deployment.py, '{{inputs.parameters.deployment_name}}',
+        '{{inputs.parameters.deployment_namespace}}', '{{inputs.parameters.detmaster}}',
+        '{{inputs.parameters.model_name}}', --image, '{{inputs.parameters.image}}']
+      image: davidhershey/seldon-create:1.2
+    inputs:
+      parameters:
+      - {name: deployment_name}
+      - {name: deployment_namespace}
+      - {name: detmaster}
+      - {name: image}
+      - {name: model_name}
+    outputs:
+      artifacts:
+      - {name: create-seldon-deployment-endpoint, path: /tmp/endpoint.txt}
+  - name: decide
+    container:
+      args: [--detmaster, '{{inputs.parameters.detmaster}}', --experiment-id, '{{inputs.parameters.run-det-and-wait-Output}}',
+        --model-name, '{{inputs.parameters.model_name}}', '----output-paths', /tmp/outputs/Output/data]
+      command:
+      - python3
+      - -u
+      - -c
+      - |
+        def decide(detmaster, experiment_id, model_name):
+            # Submit determined experiment via CLI
+            from determined.experimental import Determined
+            import os
+
+            os.environ['DET_MASTER'] = detmaster
+
+            def get_validation_metric(checkpoint):
+                metrics = checkpoint.validation['metrics']
+                config = checkpoint.experiment_config
+                searcher = config['searcher']
+                smaller_is_better = bool(searcher['smaller_is_better'])
+                metric_name = searcher['metric']
+                if 'validation_metrics' in metrics:
+                    metric = metrics['validation_metrics'][metric_name]
+                else:
+                    metric = metrics['validationMetrics'][metric_name]
+                return (metric, smaller_is_better)
+
+            d = Determined()
+            checkpoint = d.get_experiment(experiment_id).top_checkpoint()
+            metric, smaller_is_better = get_validation_metric(checkpoint)
+
+            models = d.get_models(name=model_name)
+            model = None
+            for m in models:
+                if m.name == model_name:
+                    model = m
+                    break
+            if not model:
+                print(f'Registering new Model: {model_name}')
+                model = Determined().create_model(model_name)
+                model.register_version(checkpoint.uuid)
+                better = True
+            else:
+                latest_version = model.get_version()
+                if latest_version is None:
+                    print(f'Registering new version: {model_name}')
+                    model.register_version(checkpoint.uuid)
+                    better = True
+                else:
+                    old_metric, _ = get_validation_metric(latest_version)
+                    if smaller_is_better:
+                        if metric < old_metric:
+                            print(f'Registering new version: {model_name}')
+                            model.register_version(checkpoint.uuid)
+                            better = True
+                        else:
+                            better = False
+                    else:
+                        if metric > old_metric:
+                            print(f'Registering new version: {model_name}')
+                            model.register_version(checkpoint.uuid)
+                            better = True
+                        else:
+                            better = False
+
+            if not better:
+                print('Previous model version was better, logging...')
+            return better
+
+        def _serialize_bool(bool_value: bool) -> str:
+            if isinstance(bool_value, str):
+                return bool_value
+            if not isinstance(bool_value, bool):
+                raise TypeError('Value "{}" has type "{}" instead of bool.'.format(str(bool_value), str(type(bool_value))))
+            return str(bool_value)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Decide', description='')
+        _parser.add_argument("--detmaster", dest="detmaster", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--experiment-id", dest="experiment_id", type=int, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--model-name", dest="model_name", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+        _parsed_args = vars(_parser.parse_args())
+        _output_files = _parsed_args.pop("_output_paths", [])
+
+        _outputs = decide(**_parsed_args)
+
+        _outputs = [_outputs]
+
+        _output_serializers = [
+            _serialize_bool,
+
+        ]
+
+        import os
+        for idx, output_file in enumerate(_output_files):
+            try:
+                os.makedirs(os.path.dirname(output_file))
+            except OSError:
+                pass
+            with open(output_file, 'w') as f:
+                f.write(_output_serializers[idx](_outputs[idx]))
+      image: davidhershey/detcli:1.9
+    inputs:
+      parameters:
+      - {name: detmaster}
+      - {name: model_name}
+      - {name: run-det-and-wait-Output}
+    outputs:
+      parameters:
+      - name: decide-Output
+        valueFrom: {path: /tmp/outputs/Output/data}
+      artifacts:
+      - {name: decide-Output, path: /tmp/outputs/Output/data}
+    metadata:
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"args": ["--detmaster", {"inputValue": "detmaster"}, "--experiment-id",
+          {"inputValue": "experiment_id"}, "--model-name", {"inputValue": "model_name"},
+          "----output-paths", {"outputPath": "Output"}], "command": ["python3", "-u",
+          "-c", "def decide(detmaster, experiment_id, model_name):\n    # Submit determined
+          experiment via CLI\n    from determined.experimental import Determined\n    import
+          os\n\n    os.environ[''DET_MASTER''] = detmaster\n\n    def get_validation_metric(checkpoint):\n        metrics
+          = checkpoint.validation[''metrics'']\n        config = checkpoint.experiment_config\n        searcher
+          = config[''searcher'']\n        smaller_is_better = bool(searcher[''smaller_is_better''])\n        metric_name
+          = searcher[''metric'']\n        if ''validation_metrics'' in metrics:\n            metric
+          = metrics[''validation_metrics''][metric_name]\n        else:\n            metric
+          = metrics[''validationMetrics''][metric_name]\n        return (metric, smaller_is_better)\n\n    d
+          = Determined()\n    checkpoint = d.get_experiment(experiment_id).top_checkpoint()\n    metric,
+          smaller_is_better = get_validation_metric(checkpoint)\n\n    models = d.get_models(name=model_name)\n    model
+          = None\n    for m in models:\n        if m.name == model_name:\n            model
+          = m\n            break\n    if not model:\n        print(f''Registering
+          new Model: {model_name}'')\n        model = Determined().create_model(model_name)\n        model.register_version(checkpoint.uuid)\n        better
+          = True\n    else:\n        latest_version = model.get_version()\n        if
+          latest_version is None:\n            print(f''Registering new version: {model_name}'')\n            model.register_version(checkpoint.uuid)\n            better
+          = True\n        else:\n            old_metric, _ = get_validation_metric(latest_version)\n            if
+          smaller_is_better:\n                if metric < old_metric:\n                    print(f''Registering
+          new version: {model_name}'')\n                    model.register_version(checkpoint.uuid)\n                    better
+          = True\n                else:\n                    better = False\n            else:\n                if
+          metric > old_metric:\n                    print(f''Registering new version:
+          {model_name}'')\n                    model.register_version(checkpoint.uuid)\n                    better
+          = True\n                else:\n                    better = False\n\n    if
+          not better:\n        print(''Previous model version was better, logging...'')\n    return
+          better\n\ndef _serialize_bool(bool_value: bool) -> str:\n    if isinstance(bool_value,
+          str):\n        return bool_value\n    if not isinstance(bool_value, bool):\n        raise
+          TypeError(''Value \"{}\" has type \"{}\" instead of bool.''.format(str(bool_value),
+          str(type(bool_value))))\n    return str(bool_value)\n\nimport argparse\n_parser
+          = argparse.ArgumentParser(prog=''Decide'', description='''')\n_parser.add_argument(\"--detmaster\",
+          dest=\"detmaster\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--experiment-id\",
+          dest=\"experiment_id\", type=int, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--model-name\",
+          dest=\"model_name\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\",
+          dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files
+          = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = decide(**_parsed_args)\n\n_outputs
+          = [_outputs]\n\n_output_serializers = [\n    _serialize_bool,\n\n]\n\nimport
+          os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except
+          OSError:\n        pass\n    with open(output_file, ''w'') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"],
+          "image": "davidhershey/detcli:1.9"}}, "inputs": [{"name": "detmaster", "type":
+          "String"}, {"name": "experiment_id", "type": "Integer"}, {"name": "model_name",
+          "type": "String"}], "name": "Decide", "outputs": [{"name": "Output", "type":
+          "Boolean"}]}', pipelines.kubeflow.org/component_ref: '{}'}
+  - name: determined-submit
+    inputs:
+      parameters:
+      - {name: branch}
+      - {name: config}
+      - {name: context}
+      - {name: deployment_name}
+      - {name: deployment_namespace}
+      - {name: detmaster}
+      - {name: image}
+      - {name: mlrepo}
+      - {name: model_name}
+    dag:
+      tasks:
+      - name: condition-Deploy-1
+        template: condition-Deploy-1
+        when: '"{{tasks.decide.outputs.parameters.decide-Output}}" == "True"'
+        dependencies: [decide]
+        arguments:
+          parameters:
+          - {name: deployment_name, value: '{{inputs.parameters.deployment_name}}'}
+          - {name: deployment_namespace, value: '{{inputs.parameters.deployment_namespace}}'}
+          - {name: detmaster, value: '{{inputs.parameters.detmaster}}'}
+          - {name: image, value: '{{inputs.parameters.image}}'}
+          - {name: model_name, value: '{{inputs.parameters.model_name}}'}
+      - name: condition-No-Deploy-2
+        template: condition-No-Deploy-2
+        when: '"{{tasks.decide.outputs.parameters.decide-Output}}" == "False"'
+        dependencies: [decide]
+      - {name: create-pipeline-volume, template: create-pipeline-volume}
+      - name: decide
+        template: decide
+        dependencies: [run-det-and-wait]
+        arguments:
+          parameters:
+          - {name: detmaster, value: '{{inputs.parameters.detmaster}}'}
+          - {name: model_name, value: '{{inputs.parameters.model_name}}'}
+          - {name: run-det-and-wait-Output, value: '{{tasks.run-det-and-wait.outputs.parameters.run-det-and-wait-Output}}'}
+      - name: git-clone
+        template: git-clone
+        dependencies: [create-pipeline-volume]
+        arguments:
+          parameters:
+          - {name: branch, value: '{{inputs.parameters.branch}}'}
+          - {name: create-pipeline-volume-name, value: '{{tasks.create-pipeline-volume.outputs.parameters.create-pipeline-volume-name}}'}
+          - {name: mlrepo, value: '{{inputs.parameters.mlrepo}}'}
+      - name: run-det-and-wait
+        template: run-det-and-wait
+        dependencies: [create-pipeline-volume, git-clone]
+        arguments:
+          parameters:
+          - {name: config, value: '{{inputs.parameters.config}}'}
+          - {name: context, value: '{{inputs.parameters.context}}'}
+          - {name: create-pipeline-volume-name, value: '{{tasks.create-pipeline-volume.outputs.parameters.create-pipeline-volume-name}}'}
+          - {name: detmaster, value: '{{inputs.parameters.detmaster}}'}
+  - name: git-clone
+    container:
+      args: [-c, 'git clone --single-branch --branch {{inputs.parameters.branch}}
+          {{inputs.parameters.mlrepo}} /src/mlrepo/ && cd /src/mlrepo/ && ls']
+      command: [sh]
+      image: alpine/git:latest
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+      - {mountPath: /src/, name: create-pipeline-volume}
+    inputs:
+      parameters:
+      - {name: branch}
+      - {name: create-pipeline-volume-name}
+      - {name: mlrepo}
+    volumes:
+    - name: create-pipeline-volume
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.create-pipeline-volume-name}}'}
+  - name: print-op
+    container:
+      args: [--message, Model Not Deployed -- Performance was not better than previous
+          version]
+      command:
+      - python3
+      - -u
+      - -c
+      - |
+        def print_op(message):
+            """Print a message."""
+            print(message)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Print op', description='Print a message.')
+        _parser.add_argument("--message", dest="message", type=str, required=True, default=argparse.SUPPRESS)
+        _parsed_args = vars(_parser.parse_args())
+
+        _outputs = print_op(**_parsed_args)
+      image: python:3.7
+    metadata:
+      annotations: {pipelines.kubeflow.org/component_spec: '{"description": "Print
+          a message.", "implementation": {"container": {"args": ["--message", {"inputValue":
+          "message"}], "command": ["python3", "-u", "-c", "def print_op(message):\n    \"\"\"Print
+          a message.\"\"\"\n    print(message)\n\nimport argparse\n_parser = argparse.ArgumentParser(prog=''Print
+          op'', description=''Print a message.'')\n_parser.add_argument(\"--message\",
+          dest=\"message\", type=str, required=True, default=argparse.SUPPRESS)\n_parsed_args
+          = vars(_parser.parse_args())\n\n_outputs = print_op(**_parsed_args)\n"],
+          "image": "python:3.7"}}, "inputs": [{"name": "message", "type": "String"}],
+          "name": "Print op"}', pipelines.kubeflow.org/component_ref: '{}'}
+  - name: run-det-and-wait
+    container:
+      args: [--detmaster, '{{inputs.parameters.detmaster}}', --config, '{{inputs.parameters.config}}',
+        --context, '{{inputs.parameters.context}}', '----output-paths', /tmp/outputs/Output/data]
+      command:
+      - python3
+      - -u
+      - -c
+      - |
+        def run_det_and_wait(detmaster, config, context):
+            # Submit determined experiment via CLI
+            import logging
+            import os
+            import re
+            import subprocess
+
+            logging.basicConfig(level=logging.INFO)
+
+            repo_dir = "/src/mlrepo/"
+
+            config = os.path.join(repo_dir, config)
+            context = os.path.join(repo_dir, context)
+            cmd = ["det", "-m", detmaster, "e", "create", config, context]
+            submit = subprocess.run(cmd, capture_output=True)
+            output = str(submit.stdout)
+            experiment_id = int(re.search("Created experiment (\d+)", output)[1])
+            logging.info(f"Created Experiment {experiment_id}")
+
+            # Wait for experiment to complete via CLI
+            wait = subprocess.run(["det", "-m", detmaster, "e", "wait", str(experiment_id)])
+            logging.info(f"Experiment {experiment_id} completed!")
+            return experiment_id
+
+        def _serialize_int(int_value: int) -> str:
+            if isinstance(int_value, str):
+                return int_value
+            if not isinstance(int_value, int):
+                raise TypeError('Value "{}" has type "{}" instead of int.'.format(str(int_value), str(type(int_value))))
+            return str(int_value)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Run det and wait', description='')
+        _parser.add_argument("--detmaster", dest="detmaster", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--config", dest="config", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--context", dest="context", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+        _parsed_args = vars(_parser.parse_args())
+        _output_files = _parsed_args.pop("_output_paths", [])
+
+        _outputs = run_det_and_wait(**_parsed_args)
+
+        _outputs = [_outputs]
+
+        _output_serializers = [
+            _serialize_int,
+
+        ]
+
+        import os
+        for idx, output_file in enumerate(_output_files):
+            try:
+                os.makedirs(os.path.dirname(output_file))
+            except OSError:
+                pass
+            with open(output_file, 'w') as f:
+                f.write(_output_serializers[idx](_outputs[idx]))
+      image: davidhershey/detcli:1.9
+      volumeMounts:
+      - {mountPath: /src/, name: create-pipeline-volume}
+    inputs:
+      parameters:
+      - {name: config}
+      - {name: context}
+      - {name: create-pipeline-volume-name}
+      - {name: detmaster}
+    outputs:
+      parameters:
+      - name: run-det-and-wait-Output
+        valueFrom: {path: /tmp/outputs/Output/data}
+      artifacts:
+      - {name: run-det-and-wait-Output, path: /tmp/outputs/Output/data}
+    volumes:
+    - name: create-pipeline-volume
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.create-pipeline-volume-name}}'}
+    metadata:
+      annotations: {pipelines.kubeflow.org/component_spec: '{"implementation": {"container":
+          {"args": ["--detmaster", {"inputValue": "detmaster"}, "--config", {"inputValue":
+          "config"}, "--context", {"inputValue": "context"}, "----output-paths", {"outputPath":
+          "Output"}], "command": ["python3", "-u", "-c", "def run_det_and_wait(detmaster,
+          config, context):\n    # Submit determined experiment via CLI\n    import
+          logging\n    import os\n    import re\n    import subprocess\n\n    logging.basicConfig(level=logging.INFO)\n\n    repo_dir
+          = \"/src/mlrepo/\"\n\n    config = os.path.join(repo_dir, config)\n    context
+          = os.path.join(repo_dir, context)\n    cmd = [\"det\", \"-m\", detmaster,
+          \"e\", \"create\", config, context]\n    submit = subprocess.run(cmd, capture_output=True)\n    output
+          = str(submit.stdout)\n    experiment_id = int(re.search(\"Created experiment
+          (\\d+)\", output)[1])\n    logging.info(f\"Created Experiment {experiment_id}\")\n\n    #
+          Wait for experiment to complete via CLI\n    wait = subprocess.run([\"det\",
+          \"-m\", detmaster, \"e\", \"wait\", str(experiment_id)])\n    logging.info(f\"Experiment
+          {experiment_id} completed!\")\n    return experiment_id\n\ndef _serialize_int(int_value:
+          int) -> str:\n    if isinstance(int_value, str):\n        return int_value\n    if
+          not isinstance(int_value, int):\n        raise TypeError(''Value \"{}\"
+          has type \"{}\" instead of int.''.format(str(int_value), str(type(int_value))))\n    return
+          str(int_value)\n\nimport argparse\n_parser = argparse.ArgumentParser(prog=''Run
+          det and wait'', description='''')\n_parser.add_argument(\"--detmaster\",
+          dest=\"detmaster\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--config\",
+          dest=\"config\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"--context\",
+          dest=\"context\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\",
+          dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files
+          = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = run_det_and_wait(**_parsed_args)\n\n_outputs
+          = [_outputs]\n\n_output_serializers = [\n    _serialize_int,\n\n]\n\nimport
+          os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except
+          OSError:\n        pass\n    with open(output_file, ''w'') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"],
+          "image": "davidhershey/detcli:1.9"}}, "inputs": [{"name": "detmaster", "type":
+          "String"}, {"name": "config", "type": "String"}, {"name": "context", "type":
+          "String"}], "name": "Run det and wait", "outputs": [{"name": "Output", "type":
+          "Integer"}]}', pipelines.kubeflow.org/component_ref: '{}'}
+  arguments:
+    parameters:
+    - {name: detmaster}
+    - {name: mlrepo, value: 'https://github.com/determined-ai/determined.git'}
+    - {name: branch, value: 0.13.0}
+    - {name: config, value: examples/official/trial/mnist_pytorch/const.yaml}
+    - {name: context, value: examples/official/trial/mnist_pytorch/}
+    - {name: model_name, value: mnist-prod}
+    - {name: deployment_name, value: mnist-prod-kf}
+    - {name: deployment_namespace, value: david}
+    - {name: image, value: 'davidhershey/seldon-mnist:1.6'}
+  serviceAccountName: pipeline-runner
