@@ -4,16 +4,16 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
 
 ## Data Tools
 
-* [Pachyderm](pachyderm.com)
+* [Pachyderm](https://www.pachyderm.com)
   * An example Pachyderm integration can be found [in the platform example](example_platform/README.md)
-* [DVC](dvc.org)
+* [DVC](https://www.dvc.org)
   * An example of using DVC to version data for Determined can be found [in the DVC example](dvc/README.md)
-* [Delta Lake](delta.io)
+* [Delta Lake](https://www.delta.io)
   * An example of reading data from a Delta table to train a model in Determined can be found [in the spark example](spark_example/README.md)
 
 ## Serving Tools
 
-* [Seldon Core](http://seldon.com/)
+* [Seldon Core](https://www.seldon.io/)
   * An example of using Seldon as a part of an end to end platform can be found [in the platform example](example_platform/README.md)
   * An example demonstrating automatic Seldon serving of models trained in Determined can be found [in the argo workflow example](kubeflow_pipelines/README.md)
 * [Spark](https://spark.apache.org/)
