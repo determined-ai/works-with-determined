@@ -20,7 +20,6 @@ def clone_mlrepo(repo_url: str, branch: str, volume: dsl.PipelineVolume):
         image=image,
         command=["sh"],
         arguments=["-c", " && ".join(commands)],
-        container_kwargs={"image_pull_policy": "IfNotPresent"},
         pvolumes={"/src/": volume},
     )
 
@@ -35,19 +34,20 @@ def run_det_and_wait(detmaster: str, config: str, context: str) -> int:
     import subprocess
 
     logging.basicConfig(level=logging.INFO)
+    os.environ['DET_MASTER'] = detmaster
 
     repo_dir = "/src/mlrepo/"
 
     config = os.path.join(repo_dir, config)
     context = os.path.join(repo_dir, context)
-    cmd = ["det", "-m", detmaster, "e", "create", config, context]
+    cmd = ["det", "e", "create", config, context]
     submit = subprocess.run(cmd, capture_output=True)
     output = str(submit.stdout)
     experiment_id = int(re.search("Created experiment (\d+)", output)[1])
     logging.info(f"Created Experiment {experiment_id}")
 
     # Wait for experiment to complete via CLI
-    wait = subprocess.run(["det", "-m", detmaster, "e", "wait", str(experiment_id)])
+    wait = subprocess.run(["det", "e", "wait", str(experiment_id)])
     logging.info(f"Experiment {experiment_id} completed!")
     return experiment_id
 
@@ -70,52 +70,33 @@ def decide(detmaster: str, experiment_id: int, model_name: str) -> bool:
         searcher = config['searcher']
         smaller_is_better = bool(searcher['smaller_is_better'])
         metric_name = searcher['metric']
-        if 'validation_metrics' in metrics:
-            metric = metrics['validation_metrics'][metric_name]
-        else:
-            metric = metrics['validationMetrics'][metric_name]
+        metric = metrics['validationMetrics'][metric_name]
         return (metric, smaller_is_better)
+
+    def is_better(c1, c2):
+        m1, smaller_is_better = get_validation_metric(c1)
+        m2, _ = get_validation_metric(c2)
+        if smaller_is_better and m1 < m2:
+            return True
+        return False
 
     d = Determined()
     checkpoint = d.get_experiment(experiment_id).top_checkpoint()
-    metric, smaller_is_better = get_validation_metric(checkpoint)
-
-    models = d.get_models(name=model_name)
-    model = None
-    for m in models:
-        if m.name == model_name:
-            model = m
-            break
-    if not model:
+    try:
+        model = d.get_model(model_name)
+    except:  # Model not yet in registry
         print(f'Registering new Model: {model_name}')
-        model = Determined().create_model(model_name)
-        model.register_version(checkpoint.uuid)
+        model = d.create_model(model_name)
+
+    latest_version = model.get_version()
+    if latest_version is None:
         better = True
     else:
-        latest_version = model.get_version()
-        if latest_version is None:
-            print(f'Registering new version: {model_name}')
-            model.register_version(checkpoint.uuid)
-            better = True
-        else:
-            old_metric, _ = get_validation_metric(latest_version)
-            if smaller_is_better:
-                if metric < old_metric:
-                    print(f'Registering new version: {model_name}')
-                    model.register_version(checkpoint.uuid)
-                    better = True
-                else:
-                    better = False
-            else:
-                if metric > old_metric:
-                    print(f'Registering new version: {model_name}')
-                    model.register_version(checkpoint.uuid)
-                    better = True
-                else:
-                    better = False
+        better = is_better(latest_version, checkpoint)
 
-    if not better:
-        print('Previous model version was better, logging...')
+    if better:
+        print(f'Registering new version: {model_name}')
+        model.register_version(checkpoint.uuid)
     return better
 
 
@@ -158,7 +139,8 @@ def print_op(message: str):
 
 
 @dsl.pipeline(
-    name="Determined Submit", description="Submit an experiment with Determined"
+    name="Determined Train and Deploy",
+    description="Train a model with Determined, deploy the result to Seldon"
 )
 def det_train_pipeline(
     detmaster,
