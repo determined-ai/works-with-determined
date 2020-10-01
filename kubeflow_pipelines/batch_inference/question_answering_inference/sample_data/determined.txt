@@ -1,0 +1,3 @@
+Determined AI is the world's fastest and most comprehensive deep learning training platform.  Determined boasts distributed training more than twice as fast as horovod and hyperparameter tuning more than five times faster than leading research methods.  Determined has been shown to reduce cloud GPU costs by up to 70% for large deep learning teams.
+how much faster is Determined than horovod?
+how much can Determined save teams?

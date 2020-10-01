@@ -1,0 +1,207 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: batch-inference-2-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.0.0, pipelines.kubeflow.org/pipeline_compilation_time: '2020-09-28T10:13:38.264356',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "Inference with a Determined
+      Model", "inputs": [{"name": "detmaster"}, {"default": "david-pedestrian-detection-examples",
+      "name": "data_bucket", "optional": true}, {"default": "pedestrian", "name":
+      "model_name", "optional": true}, {"default": "0", "name": "model_version", "optional":
+      true}], "name": "Batch Inference"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.0.0}
+spec:
+  entrypoint: batch-inference-2
+  templates:
+  - name: batch-inference
+    container:
+      command: [python, inference.py, '{{inputs.parameters.download-inference-data-Output}}',
+        '{{inputs.parameters.model_name}}', '{{inputs.parameters.detmaster}}', '{{inputs.parameters.model_version}}']
+      image: davidhershey/pedestrian-batch:1.3
+      volumeMounts:
+      - {mountPath: /data/, name: create-pipeline-volume}
+    inputs:
+      parameters:
+      - {name: create-pipeline-volume-name}
+      - {name: detmaster}
+      - {name: download-inference-data-Output}
+      - {name: model_name}
+      - {name: model_version}
+    outputs:
+      artifacts:
+      - {name: batch-inference-predictions, path: /tmp/outputs.txt}
+    volumes:
+    - name: create-pipeline-volume
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.create-pipeline-volume-name}}'}
+  - name: batch-inference-2
+    inputs:
+      parameters:
+      - {name: data_bucket}
+      - {name: detmaster}
+      - {name: model_name}
+      - {name: model_version}
+    dag:
+      tasks:
+      - name: batch-inference
+        template: batch-inference
+        dependencies: [create-pipeline-volume, download-inference-data]
+        arguments:
+          parameters:
+          - {name: create-pipeline-volume-name, value: '{{tasks.create-pipeline-volume.outputs.parameters.create-pipeline-volume-name}}'}
+          - {name: detmaster, value: '{{inputs.parameters.detmaster}}'}
+          - {name: download-inference-data-Output, value: '{{tasks.download-inference-data.outputs.parameters.download-inference-data-Output}}'}
+          - {name: model_name, value: '{{inputs.parameters.model_name}}'}
+          - {name: model_version, value: '{{inputs.parameters.model_version}}'}
+      - {name: create-pipeline-volume, template: create-pipeline-volume}
+      - name: download-inference-data
+        template: download-inference-data
+        dependencies: [create-pipeline-volume]
+        arguments:
+          parameters:
+          - {name: create-pipeline-volume-name, value: '{{tasks.create-pipeline-volume.outputs.parameters.create-pipeline-volume-name}}'}
+          - {name: data_bucket, value: '{{inputs.parameters.data_bucket}}'}
+  - name: create-pipeline-volume
+    resource:
+      action: create
+      manifest: |
+        apiVersion: v1
+        kind: PersistentVolumeClaim
+        metadata:
+          name: '{{workflow.name}}-mlrepo-pvc'
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 3Gi
+    outputs:
+      parameters:
+      - name: create-pipeline-volume-manifest
+        valueFrom: {jsonPath: '{}'}
+      - name: create-pipeline-volume-name
+        valueFrom: {jsonPath: '{.metadata.name}'}
+      - name: create-pipeline-volume-size
+        valueFrom: {jsonPath: '{.status.capacity.storage}'}
+  - name: download-inference-data
+    container:
+      args: [--bucket, '{{inputs.parameters.data_bucket}}', '----output-paths', /tmp/outputs/Output/data]
+      command:
+      - sh
+      - -c
+      - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+        'boto3' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet
+        --no-warn-script-location 'boto3' --user) && "$0" "$@"
+      - python3
+      - -u
+      - -c
+      - |
+        def download_inference_data(bucket):
+            """Download data from S3"""
+            import boto3
+            import os
+            s3 = boto3.resource('s3')
+
+            def download_s3_folder(bucket_name, s3_folder, local_dir):
+                """
+                Download the contents of a folder directory
+                Args:
+                    bucket_name: the name of the s3 bucket
+                    s3_folder: the folder path in the s3 bucket
+                    local_dir: a relative or absolute directory path in the local file system
+                """
+                bucket = s3.Bucket(bucket_name)
+                for obj in bucket.objects.filter(Prefix=s3_folder):
+                    target = obj.key if local_dir is None \
+                        else os.path.join(local_dir, os.path.basename(obj.key))
+                    if not os.path.exists(os.path.dirname(target)):
+                        os.makedirs(os.path.dirname(target))
+                    bucket.download_file(obj.key, target)
+                    print(obj.key)
+
+            local_path = "/data/"
+            download_s3_folder(bucket, '', local_path)
+            return local_path
+
+        def _serialize_str(str_value: str) -> str:
+            if not isinstance(str_value, str):
+                raise TypeError('Value "{}" has type "{}" instead of str.'.format(str(str_value), str(type(str_value))))
+            return str_value
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Download inference data', description='Download data from S3')
+        _parser.add_argument("--bucket", dest="bucket", type=str, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+        _parsed_args = vars(_parser.parse_args())
+        _output_files = _parsed_args.pop("_output_paths", [])
+
+        _outputs = download_inference_data(**_parsed_args)
+
+        _outputs = [_outputs]
+
+        _output_serializers = [
+            _serialize_str,
+
+        ]
+
+        import os
+        for idx, output_file in enumerate(_output_files):
+            try:
+                os.makedirs(os.path.dirname(output_file))
+            except OSError:
+                pass
+            with open(output_file, 'w') as f:
+                f.write(_output_serializers[idx](_outputs[idx]))
+      image: python:3.7
+      volumeMounts:
+      - {mountPath: /data/, name: create-pipeline-volume}
+    inputs:
+      parameters:
+      - {name: create-pipeline-volume-name}
+      - {name: data_bucket}
+    outputs:
+      parameters:
+      - name: download-inference-data-Output
+        valueFrom: {path: /tmp/outputs/Output/data}
+      artifacts:
+      - {name: download-inference-data-Output, path: /tmp/outputs/Output/data}
+    volumes:
+    - name: create-pipeline-volume
+      persistentVolumeClaim: {claimName: '{{inputs.parameters.create-pipeline-volume-name}}'}
+    metadata:
+      annotations: {pipelines.kubeflow.org/component_spec: '{"description": "Download
+          data from S3", "implementation": {"container": {"args": ["--bucket", {"inputValue":
+          "bucket"}, "----output-paths", {"outputPath": "Output"}], "command": ["sh",
+          "-c", "(PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+          ''boto3'' || PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet
+          --no-warn-script-location ''boto3'' --user) && \"$0\" \"$@\"", "python3",
+          "-u", "-c", "def download_inference_data(bucket):\n    \"\"\"Download data
+          from S3\"\"\"\n    import boto3\n    import os\n    s3 = boto3.resource(''s3'')\n\n    def
+          download_s3_folder(bucket_name, s3_folder, local_dir):\n        \"\"\"\n        Download
+          the contents of a folder directory\n        Args:\n            bucket_name:
+          the name of the s3 bucket\n            s3_folder: the folder path in the
+          s3 bucket\n            local_dir: a relative or absolute directory path
+          in the local file system\n        \"\"\"\n        bucket = s3.Bucket(bucket_name)\n        for
+          obj in bucket.objects.filter(Prefix=s3_folder):\n            target = obj.key
+          if local_dir is None \\\n                else os.path.join(local_dir, os.path.basename(obj.key))\n            if
+          not os.path.exists(os.path.dirname(target)):\n                os.makedirs(os.path.dirname(target))\n            bucket.download_file(obj.key,
+          target)\n            print(obj.key)\n\n    local_path = \"/data/\"\n    download_s3_folder(bucket,
+          '''', local_path)\n    return local_path\n\ndef _serialize_str(str_value:
+          str) -> str:\n    if not isinstance(str_value, str):\n        raise TypeError(''Value
+          \"{}\" has type \"{}\" instead of str.''.format(str(str_value), str(type(str_value))))\n    return
+          str_value\n\nimport argparse\n_parser = argparse.ArgumentParser(prog=''Download
+          inference data'', description=''Download data from S3'')\n_parser.add_argument(\"--bucket\",
+          dest=\"bucket\", type=str, required=True, default=argparse.SUPPRESS)\n_parser.add_argument(\"----output-paths\",
+          dest=\"_output_paths\", type=str, nargs=1)\n_parsed_args = vars(_parser.parse_args())\n_output_files
+          = _parsed_args.pop(\"_output_paths\", [])\n\n_outputs = download_inference_data(**_parsed_args)\n\n_outputs
+          = [_outputs]\n\n_output_serializers = [\n    _serialize_str,\n\n]\n\nimport
+          os\nfor idx, output_file in enumerate(_output_files):\n    try:\n        os.makedirs(os.path.dirname(output_file))\n    except
+          OSError:\n        pass\n    with open(output_file, ''w'') as f:\n        f.write(_output_serializers[idx](_outputs[idx]))\n"],
+          "image": "python:3.7"}}, "inputs": [{"name": "bucket", "type": "String"}],
+          "name": "Download inference data", "outputs": [{"name": "Output", "type":
+          "String"}]}', pipelines.kubeflow.org/component_ref: '{}'}
+  arguments:
+    parameters:
+    - {name: detmaster}
+    - {name: data_bucket, value: david-pedestrian-detection-examples}
+    - {name: model_name, value: pedestrian}
+    - {name: model_version, value: '0'}
+  serviceAccountName: pipeline-runner
