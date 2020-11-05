@@ -23,7 +23,7 @@ import numpy as np
 import determined as det
 from determined.pytorch import DataLoader, LRScheduler, PyTorchTrial
 
-from data import download_data, get_transform, collate_fn, PennFudanDataset
+from predict import download_data, get_transform, collate_fn, PennFudanDataset
 
 TorchData = Union[Dict[str, torch.Tensor], Sequence[torch.Tensor], torch.Tensor]
 
