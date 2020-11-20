@@ -56,7 +56,7 @@ def create_ped_inference_op(
     ]
     return dsl.ContainerOp(
         name='Batch Inference',
-        image='davidhershey/pedestrian-batch:1.3',
+        image='davidhershey/pedestrian-batch:1.5',
         command=command,
         file_outputs={
             'predictions': '/tmp/outputs.txt',
