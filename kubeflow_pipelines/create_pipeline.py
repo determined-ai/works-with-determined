@@ -57,7 +57,7 @@ run_det_and_wait_op = func_to_container_op(
 )
 
 
-def decide(detmaster: str, experiment_id: int, model_name: str) -> bool:
+def register(detmaster: str, experiment_id: int, model_name: str) -> bool:
     # Submit determined experiment via CLI
     from determined.experimental import Determined
     import os
@@ -88,20 +88,13 @@ def decide(detmaster: str, experiment_id: int, model_name: str) -> bool:
         print(f'Registering new Model: {model_name}')
         model = d.create_model(model_name)
 
-    latest_version = model.get_version()
-    if latest_version is None:
-        better = True
-    else:
-        better = is_better(latest_version, checkpoint)
-
-    if better:
-        print(f'Registering new version: {model_name}')
-        model.register_version(checkpoint.uuid)
-    return better
+    print(f'Registering new version: {model_name}')
+    model.register_version(checkpoint.uuid)
+    return True
 
 
-decide_op = func_to_container_op(
-    decide, base_image="davidhershey/detcli:1.9"
+register_op = func_to_container_op(
+    register, base_image="davidhershey/detcli:1.9"
 )
 
 
@@ -165,17 +158,17 @@ def det_train_pipeline(
         .add_pvolumes({"/src/": clone.pvolume})
         .after(clone)
     )
-    decide = decide_op(detmaster, train.output, model_name)
-    with dsl.Condition(decide.output == True, name="Deploy"):
-        deploy = create_seldon_op(
-            detmaster,
-            deployment_name,
-            deployment_namespace,
-            model_name,
-            image,
-        )
-    with dsl.Condition(decide.output == False, name="No-Deploy"):
-        print_op('Model Not Deployed -- Performance was not better than previous version')
+    register = (
+        register_op(detmaster, train.output, model_name)
+        .after(train)
+    )
+    deploy = create_seldon_op(
+        detmaster,
+        deployment_name,
+        deployment_namespace,
+        model_name,
+        image,
+    ).after(register)
 
 
 if __name__ == "__main__":
