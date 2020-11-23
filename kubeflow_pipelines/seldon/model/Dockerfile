@@ -1,11 +1,13 @@
 FROM python:3.7-slim
-RUN apt-get update && apt-get install -y gcc python3-dev
+RUN apt-get update && apt-get install -y gcc python3-dev patch
 
 RUN mkdir /app
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt
+
+RUN mkdir /.config && chmod 777 /.config && chmod -R 777 /app
 EXPOSE 5000
 
 # Define environment variable

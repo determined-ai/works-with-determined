@@ -114,6 +114,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# PyCharm settings
+.idea
+
 # Rope project settings
 .ropeproject
 
