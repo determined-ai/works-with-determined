@@ -1,8 +1,10 @@
 import csv
 import random
 
+
 NUM_STORES = 3000
 NUM_DAYS = 10000
+
 
 with open('train-xl.csv', 'w', newline='') as train_csv_file:
     with open('val-xl.csv', 'w', newline='') as val_csv_file:
