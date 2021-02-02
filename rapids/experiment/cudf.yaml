@@ -1,6 +1,6 @@
 description: rossman_const_cudf
 environment:
-  image: davetroiano/determined-rapids:1.0
+  image: davetroiano/determined-rapids:2.0
 hyperparameters:
   global_batch_size: 4096
   cudf: True
