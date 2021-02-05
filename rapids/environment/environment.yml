@@ -5,4 +5,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - rapids=0.14  # for latest nvtabular, need 0.16
+  - rapids=0.14

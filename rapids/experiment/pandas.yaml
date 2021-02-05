@@ -21,8 +21,8 @@ searcher:
   name: single
   metric: validation_loss
   max_length:
-    batches: 20000
+    batches: 8000
   smaller_is_better: true
-scheduling_unit: 2000
+scheduling_unit: 1000
 max_restarts: 0
 entrypoint: model:RossmanTrial

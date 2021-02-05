@@ -5,6 +5,7 @@ import cupy
 import torch
 import torch.nn as nn
 import torch.optim as opt
+import urllib.request
 
 from determined.pytorch import TorchData, PyTorchTrial, PyTorchTrialContext, DataLoader, LRScheduler
 from pytorch_tabnet import tab_network
@@ -12,8 +13,11 @@ from pytorch_tabnet.utils import TorchDataset
 from torch.utils.data import Dataset
 
 
-S3_BUCKET = "determined-ai-public-datasets"
-S3_KEY = "store_sales_generated"
+S3_BUCKET = 'determined-ai-public-datasets'
+S3_KEY = 'store_sales_generated'
+TRAIN_CSV = 'train-xl.csv'
+VAL_CSV = 'val-xl.csv'
+STORE_CSV = 'store.csv'
 
 
 class TorchDataset(Dataset):
@@ -39,20 +43,27 @@ class RossmanTrial(PyTorchTrial):
         else:
             self.clip_grads = None
 
-        path_train = f"https://{S3_BUCKET}.s3-us-west-2.amazonaws.com/{S3_KEY}/train-xl.csv"
-        path_valid = f"https://{S3_BUCKET}.s3-us-west-2.amazonaws.com/{S3_KEY}/val-xl.csv"
-        path_store = f"https://{S3_BUCKET}.s3-us-west-2.amazonaws.com/{S3_KEY}/store.csv"
+        path_train = f"https://{S3_BUCKET}.s3-us-west-2.amazonaws.com/{S3_KEY}/{TRAIN_CSV}"
+        path_valid = f"https://{S3_BUCKET}.s3-us-west-2.amazonaws.com/{S3_KEY}/{VAL_CSV}"
+        path_store = f"https://{S3_BUCKET}.s3-us-west-2.amazonaws.com/{S3_KEY}/{STORE_CSV}"
+
+        print("Downloading data")
+        urllib.request.urlretrieve(path_train, TRAIN_CSV)
+        urllib.request.urlretrieve(path_valid, VAL_CSV)
+        urllib.request.urlretrieve(path_store, STORE_CSV)
+        print("Done downloading data")
 
         # CUDF
         if self.context.get_hparam("cudf"):
             print("Reading CSVs with cudf")
-            df_train = cudf.read_csv(path_train)
-            df_valid = cudf.read_csv(path_valid)
-            df_store = cudf.read_csv(path_store)
+            df_train = cudf.read_csv(TRAIN_CSV)
+            df_valid = cudf.read_csv(VAL_CSV)
+            df_store = cudf.read_csv(STORE_CSV)
 
-            print("Prepping data")
+            print("Joining dataframes")
             df_train_joined = df_train.join(df_store, how='left', on='store_id', rsuffix='store').fillna(0)
             df_val_joined = df_valid.join(df_store, how='left', on='store_id', rsuffix='store').fillna(0)
+            print("Done joining")
             cols = df_train_joined.columns.tolist()
 
             X_train = df_train_joined[cols[:12] + cols[14:]].values.astype(np.float32)
@@ -64,13 +75,14 @@ class RossmanTrial(PyTorchTrial):
             self.valid_dataset = TorchDataset(cupy.asnumpy(X_valid), cupy.asnumpy(y_valid))
         else:
             print("Reading CSVs with pandas")
-            df_train = pd.read_csv(path_train)
-            df_valid = pd.read_csv(path_valid)
-            df_store = pd.read_csv(path_store)
+            df_train = pd.read_csv(TRAIN_CSV)
+            df_valid = pd.read_csv(VAL_CSV)
+            df_store = pd.read_csv(STORE_CSV)
 
-            print("Prepping data")
+            print("Joining dataframes")
             df_train_joined = df_train.join(df_store, how='left', on='store_id', rsuffix='store').fillna(0)
             df_val_joined = df_valid.join(df_store, how='left', on='store_id', rsuffix='store').fillna(0)
+            print("Done joining")
             cols = df_train_joined.columns.tolist()
 
             X_train = df_train_joined[cols[:12] + cols[14:]].values.astype(np.float32)
