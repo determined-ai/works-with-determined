@@ -1,9 +1,6 @@
 from metaflow import FlowSpec, step
 import logging
-import os
-import re
-import subprocess
-from subprocess import PIPE
+import det
 
 def script_path(filename):
     """
@@ -30,9 +27,9 @@ class DeterminedFlow(FlowSpec):
         Placeholder step to process and transform data
 
         """
-        self.data = "data"
+        self.data = "example data"
 
-        print(f"data is: {self.data}")
+        print(f"This is your data: {self.data}")
 
         # Proceed with the model training.
         self.next(self.train)
@@ -43,43 +40,30 @@ class DeterminedFlow(FlowSpec):
         This step uses the data processed in the previous step to train the model using a model definition from a Github repo.
         """
 
-        branch = "0.13.0"
-        repo_url = "https://github.com/determined-ai/determined.git"
-        example_dir = "examples/official/trial/mnist_pytorch"
-        detmaster = "http://latest-master.determined.ai:8080/"
-        logging.basicConfig(level=logging.INFO)
+        # User inputs
+        # Indicate the Determined version you're running and your Determined Master's IP
+        det_version = "0.13.0"
+        det_master = "http://localhost:8080"
         local_repo_dir = "/tmp/repo/"
 
-        clone_command = ["git", "clone", "--single-branch", "--branch", branch, repo_url, local_repo_dir]
-        clone_repo = subprocess.run(clone_command)
+        # Default inputs
+        repo_url = "https://github.com/determined-ai/determined.git"
+        example_dir = "examples/official/trial/mnist_pytorch"
+        config_file = "const.yaml"
 
-        # Submit determined experiment via CLI
-        logging.basicConfig(level=logging.INFO)
-        local_repo_dir = "/tmp/repo"
+        # Setup example by cloning example repo and installing the Determined CLI
+        config, context = det.setup(det_version, repo_url, example_dir, config_file, local_repo_dir)
 
-        config = os.path.join(local_repo_dir, example_dir, "const.yaml")
-        context = os.path.join(local_repo_dir, example_dir)
+        # Submit determined experiment via CLI and wait for completion
+        experiment_id = det.submit(det_master, config, context)
 
-        install_determined = ["pip", "install", "determined-cli"]
-        cli = subprocess.run(install_determined)
-
-        start_experiment = ["det", "-m", detmaster, "e", "create", config, context]
-        submit = subprocess.run(start_experiment, stdout=PIPE, stderr=PIPE)
-        output = str(submit.stdout)
-        experiment_id = int(re.search("Created experiment (\d+)", output)[1])
-        logging.info(f"Created Experiment {experiment_id}")
-
-        # Wait for experiment to complete via CLI
-        wait = subprocess.run(["det", "-m", detmaster, "e", "wait", str(experiment_id)])
-        logging.info(f"Experiment {experiment_id} completed!")
         self.experiment_id = experiment_id
-
         self.next(self.deploy)
 
     @step
     def deploy(self):
         """
-        Deploy the best model to an Algorithmia endpoint.
+        Deploy the best model to an endpoint.
 
         """
 
