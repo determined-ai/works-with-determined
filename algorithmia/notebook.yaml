@@ -1,0 +1,5 @@
+description: object-detection-demo-notebook
+resources:
+  slots: 1
+environment:
+  image: determinedaicustomer/determined-demo-object-detection:2.0
