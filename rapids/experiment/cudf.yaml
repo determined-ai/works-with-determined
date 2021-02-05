@@ -1,0 +1,28 @@
+description: rossman_const_cudf
+environment:
+  image: davetroiano/determined-rapids:2.0
+hyperparameters:
+  global_batch_size: 4096
+  cudf: True
+  learning_rate: .002
+  lr_decay: 0.95
+  n_d: 32
+  n_a: 32
+  n_steps: 5
+  gamma: 1.2
+  virtual_batch_size: 512
+  momentum: 0.8
+  lambda_sparse: 3
+min_validation_period:
+  batches: 2000
+min_checkpoint_period:
+  batches: 2000
+searcher:
+  name: single
+  metric: validation_loss
+  max_length:
+    batches: 8000
+  smaller_is_better: true
+scheduling_unit: 1000
+max_restarts: 0
+entrypoint: model:RossmanTrial

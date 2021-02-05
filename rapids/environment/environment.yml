@@ -1,0 +1,8 @@
+name: Rapids
+channels:
+  - rapidsai
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - rapids=0.14
