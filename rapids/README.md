@@ -22,4 +22,4 @@ det e create pandas.yaml .
 
 ## Environment setup
 
-The experiments above are configured to use an existing image. In order to integrate RAPIDS in your own Determined images, follow the [custom image](https://docs.determined.ai/latest/how-to/custom-env.html#custom-images) pattern the [here](environment).
+The experiments above are configured to use an existing image. In order to integrate RAPIDS in your own Determined images, follow the [custom image](https://docs.determined.ai/latest/how-to/custom-env.html#custom-images) pattern [here](environment).
