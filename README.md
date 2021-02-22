@@ -26,8 +26,12 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
 * [Airflow](https://airflow.apache.org/)
   * An example of using Determined within an Airflow workflow to train a model then deploy it into Kubernetes with Seldon core can be found [in the airflow example](airflow/README.md)
 
-
 ## Platforms
 
 * [Kubeflow](https://www.kubeflow.org/)
   * [The Kubeflow pipelines example](kubeflow_pipelines/README.md) shows how to build a [Kubeflow Pipeline](https://www.kubeflow.org/docs/pipelines/overview/pipelines-overview/) with the Kubeflow Pipeline DSL that trains a model with Determined, saves improvements to the Determined model registry, then deploys that model with Seldon Core.
+
+## ML Libraries
+
+* [RAPIDS](https://rapids.ai/)
+  * [The NVIDIA RAPIDS example](rapids/README.md) shows how to integrate RAPIDS into model training on Determined, in order to perform GPU-accelerated data loading and preprocessing.
