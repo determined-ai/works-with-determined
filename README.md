@@ -13,6 +13,8 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
 
 ## Serving Tools
 
+* [Algorithmia](https://algorithmia.com/)
+  * An example of using Determined with Algorithmia to train and deploy an Object Detection model can be found in the [Algorithmia example](/algorithmia/README.md)
 * [Seldon Core](https://www.seldon.io/)
   * An example of using Seldon as a part of an end to end platform can be found [in the platform example](example_platform/README.md)
   * An example demonstrating automatic Seldon serving of models trained in Determined can be found [in the argo workflow example](kubeflow_pipelines/README.md)
