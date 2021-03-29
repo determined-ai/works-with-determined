@@ -1,6 +1,6 @@
-from metaflow import FlowSpec, step
-import logging
+from metaflow import FlowSpec, step, Parameter
 import det
+import os
 
 def script_path(filename):
     """
@@ -21,6 +21,18 @@ class DeterminedFlow(FlowSpec):
 
     """
 
+    det_master = Parameter('det-master',
+                           help='Determined Master IP',
+                           default="localhost:8080")
+
+    config_file = Parameter('config-file',
+                            help='Configuration file for experiment',
+                            default='local.yaml')
+
+    local_exp_dir = Parameter('local-exp-dir',
+                              help='Directory with experiment code',
+                              default="albert_squad_pytorch")
+
     @step
     def start(self):
         """
@@ -40,36 +52,30 @@ class DeterminedFlow(FlowSpec):
         This step uses the data processed in the previous step to train the model using a model definition from a Github repo.
         """
 
-        # User inputs
-        # Indicate the Determined version you're running and your Determined Master's IP
-        det_version = "0.13.0"
-        det_master = "http://localhost:8080"
-        local_repo_dir = "/tmp/repo/"
-
-        # Default inputs
-        repo_url = "https://github.com/determined-ai/determined.git"
-        example_dir = "examples/official/trial/mnist_pytorch"
-        config_file = "const.yaml"
+        # Override parameters if manually set by user
+        det_master=self.det_master
+        config_file=self.config_file
+        local_exp_dir=self.local_exp_dir
 
         # Setup example by cloning example repo and installing the Determined CLI
-        config, context = det.setup(det_version, repo_url, example_dir, config_file, local_repo_dir)
+        det.setup()
 
         # Submit determined experiment via CLI and wait for completion
-        experiment_id = det.submit(det_master, config, context)
+        experiment_id = det.submit(det_master, config_file, local_exp_dir)
 
         self.experiment_id = experiment_id
-        self.next(self.deploy)
+        self.next(self.get_metrics)
 
     @step
-    def deploy(self):
+    def get_metrics(self):
         """
-        Deploy the best model to an endpoint.
+        Get metric from top checkpoint
 
         """
 
-        serving_endpoint = "endpoint API to be created"
+        metric = det.get_metrics(self.det_master, self.experiment_id)
 
-        print(f"The serving endpoint can be found at {serving_endpoint}")
+        print(f"TOP METRIC: {metric}")
 
         self.next(self.end)
 

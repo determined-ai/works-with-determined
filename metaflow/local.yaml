@@ -1,0 +1,38 @@
+description: ALBert_SQuAD_PyTorch_1gpu
+hyperparameters:
+    global_batch_size: 1
+    learning_rate: 5e-3
+    model_type: 'albert'
+    adam_epsilon: 1e-8
+    weight_decay: 0
+    num_warmup_steps: 13220  # 10% of total training
+    max_seq_length: 384
+    doc_stride: 128
+    max_query_length: 64
+    n_best_size: 20
+    max_answer_length: 30
+    null_score_diff_threshold: 0.0
+    max_grad_norm: 1.0
+    num_training_steps: 132198 # This is the number of optimizer steps. Train for 2 epochs
+    do_lower_case: true
+    use_radam: false
+resources:
+    slots_per_trial: 1 # Train on 1 GPU
+searcher:
+    name: single
+    metric: f1
+    max_length:
+        records: 300
+    smaller_is_better: false
+min_validation_period:
+    records: 300
+data:
+    pretrained_model_name: "albert-base-v2"
+    use_bind_mount: False
+    bind_mount_path: /mnt/data
+    task: "SQuAD2.0"  # SQuaD 2.0 has 132198 example.
+entrypoint: model_def:AlbertSQuADPyTorch
+optimizations:
+    aggregation_frequency: 24
+reproducibility:
+  experiment_seed: 2 # Used to reproduce example; remove when training actual models

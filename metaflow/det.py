@@ -3,22 +3,14 @@ from subprocess import PIPE
 import os
 import re
 
-def setup(det_version, repo_url, example_dir, config_file, local_repo_dir):
-
-    clone_command = ["git", "clone", "--single-branch", "--branch", det_version, repo_url, local_repo_dir]
-    clone_repo = subprocess.run(clone_command)
+def setup():
 
     install_determined = ["pip", "install", "determined-cli"]
     cli = subprocess.run(install_determined)
 
-    config = os.path.join(local_repo_dir, example_dir, config_file)
-    context = os.path.join(local_repo_dir, example_dir)
+def submit(det_master, config_file, context):
 
-    return config, context
-
-def submit(det_master, config, context):
-
-    start_experiment = ["det", "-m", det_master, "e", "create", config, context, "-f"]
+    start_experiment = ["det", "-m", det_master, "e", "create", config_file, context, "-f"]
 
     experiment_id = ''
     env = dict(os.environ)
@@ -52,3 +44,16 @@ def submit(det_master, config, context):
         p.wait()
 
     return experiment_id
+
+def get_metrics(det_master, experiment_id):
+
+    awk = "'NR == 2 { print $4 }'"
+    cmd = f"det e lc --best 1 --csv {experiment_id} | awk -F, {awk}"
+    ps = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    output = ps.communicate()[0]
+    metric = output.decode('UTF-8')
+
+    ps.terminate()
+    ps.wait()
+
+    return metric
