@@ -1,11 +1,12 @@
 # Determined & Metaflow
 
-This repository outlines how Metaflow can be used to pre-process data, train a deep learning model on a Determined cluster, and retrieve the top checkpoint for local inference.
+This repository outlines how Metaflow can be used to train a deep learning model on a Determined cluster and retrieve the top checkpoint for local inference within a workflow.
 
 `example-determined.py` provides the template FlowSpec (DeterminedFLow), with steps to:
-1. Preprocess and transform the data (placeholder)
-2. Train the model on a Determined cluster
-3. Retrieve the top checkpoint from the training and use it for local inference
+1. Set up the training environment
+2. Train an ALBERT model on a Determined cluster
+3. Return the best performing metric
+4. Retrieve the top checkpoint from the training to be used for local inference
 
 
 ## Run the Flow locally
@@ -17,7 +18,7 @@ det-deploy local cluster-up <--no-gpu>
 
 Once you have a Determined cluster running locally, you can proceed with:
 1. `pip(3) install -r requirements`
-2. `python(3) example-determined.py run --training-env local`
+2. `python(3) example-determined.py run --det-master localhost:8080`
 
 You can check the status of your local training job by going to the Determined WebUI, which defaults to:
 http://localhost:8080
@@ -27,7 +28,7 @@ http://localhost:8080
 Note: You'll need to have a non-local Determined cluster set up and the `master_url` of that cluster.
 
 1. `pip(3) install -r requirements` # if you didn't run this previously
-2. `python(3) example-determined.py run --training-env distributed --det-master <master_url>`
+2. `python(3) example-determined.py run --det-master <master_url> --config-file distributed.yaml`
 
 You can check the status of your distributed training job by going to the Determined WebUI for the cluster:
 <master_url>:8080
