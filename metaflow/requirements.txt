@@ -1,6 +1,5 @@
 jupyter
 determined
-determined-cli
 metaflow
 torch==1.4
 sentencepiece==0.1.91

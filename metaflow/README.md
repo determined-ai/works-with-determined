@@ -10,25 +10,28 @@ This repository outlines how Metaflow can be used to train a deep learning model
 
 
 ## Run the Flow locally
-Note: You'll need to have a Determined cluster set up locally. To do so, simply follow this `installation`<https://docs.determined.ai/latest/how-to/installation/deploy.html#install-determined-using-det-deploy> guide, which can be summarized as:
+Note: You'll need to have a Determined cluster either installed locally or remotely. To do so, simply follow this `installation`<https://docs.determined.ai/latest/how-to/installation/deploy.html#install-determined-using-det-deploy> guide, which can be summarized as:
 ```commandline
-pip(3) install determined-deploy
-det-deploy local cluster-up <--no-gpu>
+python3 -m venv determined
+source determined/bin/activate
+pip install -r requirements.txt
+det deploy local cluster-up <--no-gpu>
 ```
 
-Once you have a Determined cluster running locally, you can proceed with:
-1. `pip(3) install -r requirements`
-2. `python(3) example-determined.py run --det-master localhost:8080`
+Once you have a Determined cluster running locally, you can execute the Flow with:
+```commandline
+python(3) example-determined.py run --det-master localhost:8080
+```
 
 You can check the status of your local training job by going to the Determined WebUI, which defaults to:
-http://localhost:8080
+`http://localhost:8080`
 
 
 ## Run the Flow on a non-local Cluster
 Note: You'll need to have a non-local Determined cluster set up and the `master_url` of that cluster.
 
-1. `pip(3) install -r requirements` # if you didn't run this previously
-2. `python(3) example-determined.py run --det-master <master_url> --config-file distributed.yaml`
+1. `pip install -r requirements` # if you didn't run this previously
+2. `python example-determined.py run --det-master <master_url> --config-file distributed.yaml`
 
 You can check the status of your distributed training job by going to the Determined WebUI for the cluster:
 <master_url>:8080
