@@ -34,7 +34,3 @@ data:
 entrypoint: model_def:AlbertSQuADPyTorch
 optimizations:
     aggregation_frequency: 3
-#bind_mounts:
-#    - host_path: /tmp/
-#      container_path: /mnt/data
-#      read_only: false
