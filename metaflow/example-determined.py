@@ -77,6 +77,12 @@ class DeterminedFlow(FlowSpec):
 
         print(f"TOP METRIC: {metric}")
 
+        # Set metric to beat
+        metric_to_beat = 0
+        # This should always pass
+        if float(metric) > metric_to_beat:
+            print(f"Current metric {metric} is greater than metric to beat {metric_to_beat} - continuing pipeline")
+                    
         self.next(self.end)
 
     @step
