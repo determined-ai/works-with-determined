@@ -1,41 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__elements": [],
-  "__requires": [
-    {
-      "type": "panel",
-      "id": "gauge",
-      "name": "Gauge",
-      "version": ""
-    },
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "8.3.3"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -59,17 +22,17 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": null,
-  "iteration": 1645844088121,
+  "id": 1,
+  "iteration": 1647559603395,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
-      "description": "",
+      "description": "GPUs are considered being used when their usage is larger than 0. So this number might not be consistent with the master's cluster page.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -114,12 +77,12 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "8.3.3",
+      "pluginVersion": "8.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} > 0) or vector(0)) / sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"})) * 100",
@@ -130,13 +93,13 @@
           "refId": "A"
         }
       ],
-      "title": "Cluster Allocation",
+      "title": "Cluster Usage",
       "type": "gauge"
     },
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -182,12 +145,12 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "8.3.3",
+      "pluginVersion": "8.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
@@ -204,7 +167,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -250,12 +213,12 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "8.3.3",
+      "pluginVersion": "8.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
@@ -272,7 +235,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -318,12 +281,12 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "8.3.3",
+      "pluginVersion": "8.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{det_resource_pool=~\"$resourcepool\"}[$__rate_interval])) / sum(machine_cpu_cores) * 100",
@@ -340,7 +303,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -386,12 +349,12 @@
         "showThresholdLabels": false,
         "showThresholdMarkers": true
       },
-      "pluginVersion": "8.3.3",
+      "pluginVersion": "8.3.0",
       "targets": [
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"} - container_fs_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
@@ -408,7 +371,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -538,7 +501,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} > 0) or vector(0)) / sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"})) * 100",
@@ -554,7 +517,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -660,7 +623,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
@@ -672,7 +635,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "avg by (label) (avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor)\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"}) ",
@@ -684,7 +647,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "avg by (label) (avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"} / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor)\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"}) ",
@@ -696,7 +659,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
@@ -712,7 +675,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -787,7 +750,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{det_resource_pool=~\"$resourcepool\"}[$__rate_interval])) / sum(machine_cpu_cores) * 100",
@@ -800,7 +763,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum by (label) (sum by (allocation_id) ((sum by (container_runtime_id) (rate(container_cpu_usage_seconds_total{}[$__rate_interval]))\n/ on (container_runtime_id) group_right det_container_id_runtime_container_id)\n/ on (container_id) group_right det_container_id_allocation_id) \n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"})",
@@ -812,7 +775,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(container_memory_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(machine_memory_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
@@ -828,7 +791,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "Prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -962,7 +925,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "Prometheus"
           },
           "exemplar": true,
           "expr": "sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"} - container_fs_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
@@ -977,16 +940,21 @@
       "type": "timeseries"
     }
   ],
-  "schemaVersion": 34,
+  "schemaVersion": 33,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
+        },
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "Prometheus"
         },
         "definition": "label_values(label)",
         "hide": 0,
@@ -1006,10 +974,14 @@
         "type": "query"
       },
       {
-        "current": {},
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
         "datasource": {
           "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
+          "uid": "Prometheus"
         },
         "definition": "label_values(det_resource_pool)",
         "hide": 0,
@@ -1038,6 +1010,6 @@
   "timezone": "",
   "title": "Determined Cluster Hardware Utilization (cAdvisor and dcgm-exporter)",
   "uid": "glTohhh7k",
-  "version": 45,
+  "version": 2,
   "weekStart": ""
 }
