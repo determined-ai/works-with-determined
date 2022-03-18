@@ -23,7 +23,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 15,
-  "iteration": 1647565977834,
+  "iteration": 1647566031714,
   "links": [],
   "panels": [
     {
@@ -912,9 +912,10 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "core_0",
-          "value": "core_0"
+          "selected": true,
+          "tags": [],
+          "text": [],
+          "value": []
         },
         "datasource": "Prometheus",
         "definition": "label_values(label)",
@@ -943,7 +944,7 @@
       {
         "allValue": null,
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
             "All"
           ],
@@ -985,5 +986,5 @@
   "timezone": "",
   "title": "Determined Cluster Hardware Utilization (cAdvisor and dcgm-exporter)",
   "uid": "glTohhh7k",
-  "version": 7
+  "version": 9
 }
