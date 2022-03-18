@@ -22,12 +22,12 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 1,
-  "iteration": 1647561372050,
+  "id": 15,
+  "iteration": 1647565977834,
   "links": [],
   "panels": [
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -74,7 +74,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.5.0",
+      "pluginVersion": "7.5.11",
       "targets": [
         {
           "exemplar": true,
@@ -85,11 +85,11 @@
           "refId": "A"
         }
       ],
-      "title": "Average Used GPU Count Ratio",
+      "title": "Average Used GPUs Ratio",
       "type": "gauge"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -135,7 +135,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.5.0",
+      "pluginVersion": "7.5.11",
       "targets": [
         {
           "datasource": {
@@ -155,7 +155,7 @@
       "type": "gauge"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -201,7 +201,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.5.0",
+      "pluginVersion": "7.5.11",
       "targets": [
         {
           "datasource": {
@@ -221,7 +221,7 @@
       "type": "gauge"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -267,7 +267,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.5.0",
+      "pluginVersion": "7.5.11",
       "targets": [
         {
           "datasource": {
@@ -287,7 +287,7 @@
       "type": "gauge"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -333,7 +333,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.5.0",
+      "pluginVersion": "7.5.11",
       "targets": [
         {
           "exemplar": true,
@@ -348,7 +348,7 @@
       "type": "gauge"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -481,14 +481,15 @@
           "instant": false,
           "interval": "",
           "legendFormat": "Cluster Allocation",
+          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
-      "title": "Cluster Allocation",
+      "title": "Used GPUs Ratio",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -597,6 +598,7 @@
           "instant": false,
           "interval": "",
           "legendFormat": "GPU Util",
+          "queryType": "randomWalk",
           "refId": "A"
         },
         {
@@ -609,6 +611,7 @@
           "hide": false,
           "interval": "",
           "legendFormat": "GPU Util: {{label}}",
+          "queryType": "randomWalk",
           "refId": "B"
         },
         {
@@ -621,6 +624,7 @@
           "hide": false,
           "interval": "",
           "legendFormat": "GPU Memory: {{label}}",
+          "queryType": "randomWalk",
           "refId": "C"
         },
         {
@@ -633,14 +637,15 @@
           "hide": false,
           "interval": "",
           "legendFormat": "GPU Memory",
+          "queryType": "randomWalk",
           "refId": "D"
         }
       ],
-      "title": "GPU / GPU Memory Utilization",
+      "title": "GPU / GPU Memory Usage",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -719,6 +724,7 @@
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "CPU Usage",
+          "queryType": "randomWalk",
           "refId": "A"
         },
         {
@@ -731,6 +737,7 @@
           "hide": false,
           "interval": "",
           "legendFormat": "CPU Usage: {{label}}",
+          "queryType": "randomWalk",
           "refId": "B"
         },
         {
@@ -743,14 +750,15 @@
           "hide": false,
           "interval": "",
           "legendFormat": "Memory",
+          "queryType": "randomWalk",
           "refId": "C"
         }
       ],
-      "title": "CPU / Memory Utilization",
+      "title": "CPU / Memory Usage",
       "type": "timeseries"
     },
     {
-      "datasource": null,
+      "datasource": "Prometheus",
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -895,6 +903,7 @@
       "type": "timeseries"
     }
   ],
+  "refresh": "5s",
   "schemaVersion": 27,
   "style": "dark",
   "tags": [],
@@ -903,12 +912,11 @@
       {
         "allValue": null,
         "current": {
-          "isNone": true,
           "selected": false,
-          "text": "None",
-          "value": ""
+          "text": "core_0",
+          "value": "core_0"
         },
-        "datasource": null,
+        "datasource": "Prometheus",
         "definition": "label_values(label)",
         "description": null,
         "error": null,
@@ -935,11 +943,15 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
-        "datasource": null,
+        "datasource": "Prometheus",
         "definition": "label_values(det_resource_pool)",
         "description": null,
         "error": null,
@@ -966,12 +978,12 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Determined Cluster Hardware Utilization (cAdvisor and dcgm-exporter)",
   "uid": "glTohhh7k",
-  "version": 10
+  "version": 7
 }
