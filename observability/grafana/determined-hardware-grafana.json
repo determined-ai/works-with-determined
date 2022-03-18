@@ -20,19 +20,15 @@
   },
   "description": "GPU/CPU system metrics configured for clusters running Determined with cAdvisor and DCGM",
   "editable": true,
-  "fiscalYearStartMonth": 0,
+  "gnetId": null,
   "graphTooltip": 0,
   "id": 1,
-  "iteration": 1647561297602,
+  "iteration": 1647561372050,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
-      "description": "GPUs are considered being used when their usage is larger than 0. So this number might not be consistent with the master's cluster page.",
+      "datasource": null,
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -69,38 +65,31 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "8.3.0",
+      "pluginVersion": "7.5.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
           "exemplar": true,
           "expr": "sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} > 0) or vector(0)) / sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"})) * 100",
-          "instant": false,
           "interval": "",
-          "intervalFactor": 1,
           "legendFormat": "",
+          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
-      "title": "Cluster Usage",
+      "title": "Average Used GPU Count Ratio",
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -137,15 +126,16 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "8.3.0",
+      "pluginVersion": "7.5.0",
       "targets": [
         {
           "datasource": {
@@ -161,14 +151,11 @@
           "refId": "A"
         }
       ],
-      "title": "GPU",
+      "title": "Average GPU Usage",
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -205,15 +192,16 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "8.3.0",
+      "pluginVersion": "7.5.0",
       "targets": [
         {
           "datasource": {
@@ -229,14 +217,11 @@
           "refId": "A"
         }
       ],
-      "title": "GPU Memory",
+      "title": "Average GPU Memory Usage",
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -273,15 +258,16 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "8.3.0",
+      "pluginVersion": "7.5.0",
       "targets": [
         {
           "datasource": {
@@ -297,14 +283,11 @@
           "refId": "A"
         }
       ],
-      "title": "CPU",
+      "title": "Average CPU Usage",
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -341,38 +324,31 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "last"
+            "mean"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true
+        "showThresholdMarkers": true,
+        "text": {}
       },
-      "pluginVersion": "8.3.0",
+      "pluginVersion": "7.5.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
           "exemplar": true,
           "expr": "sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"} - container_fs_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
-          "instant": false,
           "interval": "",
-          "intervalFactor": 1,
           "legendFormat": "",
+          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
-      "title": "Free Disk Space",
+      "title": "Average Free Disk Space",
       "type": "gauge"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -386,6 +362,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -397,14 +374,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "min": 0,
@@ -495,6 +465,9 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -515,10 +488,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -532,6 +502,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -543,14 +514,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "mappings": [],
           "min": 0,
@@ -617,6 +581,9 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -673,6 +640,7 @@
       "type": "timeseries"
     },
     {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -686,6 +654,7 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -697,14 +666,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": true
           },
           "mappings": [],
           "thresholds": {
@@ -738,6 +700,9 @@
           "placement": "bottom"
         },
         "tooltip": {
+          "mode": "single"
+        },
+        "tooltipOptions": {
           "mode": "single"
         }
       },
@@ -785,10 +750,7 @@
       "type": "timeseries"
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "Prometheus"
-      },
+      "datasource": null,
       "description": "",
       "fieldConfig": {
         "defaults": {
@@ -804,6 +766,7 @@
             "fillOpacity": 11,
             "gradientMode": "none",
             "hideFrom": {
+              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -815,14 +778,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "spanNulls": false
           },
           "decimals": 0,
           "mappings": [],
@@ -915,6 +871,9 @@
         },
         "tooltip": {
           "mode": "single"
+        },
+        "tooltipOptions": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -936,26 +895,23 @@
       "type": "timeseries"
     }
   ],
-  "schemaVersion": 33,
+  "schemaVersion": 27,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
+        "allValue": null,
         "current": {
-          "selected": true,
-          "text": [
-            "None"
-          ],
-          "value": [
-            ""
-          ]
+          "isNone": true,
+          "selected": false,
+          "text": "None",
+          "value": ""
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "Prometheus"
-        },
+        "datasource": null,
         "definition": "label_values(label)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "tags",
@@ -970,19 +926,23 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       },
       {
+        "allValue": null,
         "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "Prometheus"
-        },
+        "datasource": null,
         "definition": "label_values(det_resource_pool)",
+        "description": null,
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "resource-pool",
@@ -997,18 +957,21 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "type": "query"
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
       }
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Determined Cluster Hardware Utilization (cAdvisor and dcgm-exporter)",
   "uid": "glTohhh7k",
-  "version": 4,
-  "weekStart": ""
+  "version": 10
 }
