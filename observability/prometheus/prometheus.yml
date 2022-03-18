@@ -29,7 +29,7 @@ scrape_configs:
     action: replace
   static_configs:
   - targets:
-    - localhost:8080
+    - <det-master-address>:8080
 - job_name: cadvisor-dcgm
   honor_timestamps: true
   scrape_interval: 1s
@@ -53,4 +53,4 @@ scrape_configs:
   http_sd_configs:
   - follow_redirects: true
     refresh_interval: 1m
-    url: http://det-master-address:8080/prom/det-http-sd-config
+    url: http://<det-master-address>:8080/prom/det-http-sd-config
