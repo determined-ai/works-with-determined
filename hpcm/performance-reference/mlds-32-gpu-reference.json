@@ -1,0 +1,275 @@
+{
+    "cluster_gpus": 32,
+    "det_master": "172.23.1.2",
+    "full_cluster_distributed_metrics": {
+        "bert_checkpoint": {
+            "checkpoint_time": {
+                "mean": 1.490413936701688
+            }
+        },
+        "bert_train_fs_with_pagecache": {
+            "cpu_util_simple": {
+                "75th-percentile": 20.4,
+                "90th-percentile": 24.3,
+                "mean": 14.718863606608867,
+                "median": 12.7
+            },
+            "gpu_util": {
+                "75th-percentile": 83,
+                "90th-percentile": 84,
+                "mean": 81.18846096925995,
+                "median": 81
+            },
+            "samples_per_second": {
+                "mean": 11169.2790981183
+            }
+        },
+        "bert_validate_fs_with_pagecache": {
+            "cpu_util_simple": {
+                "75th-percentile": 13.0,
+                "90th-percentile": 13.1,
+                "mean": 8.984964732001995,
+                "median": 6.6
+            },
+            "gpu_util": {
+                "75th-percentile": 71,
+                "90th-percentile": 72,
+                "mean": 63.497101851496986,
+                "median": 66
+            },
+            "validation_epoch_time": {
+                "mean": 15.69461703300476
+            },
+            "validation_samples_per_second": {
+                "mean": 40616.198767833295
+            }
+        },
+        "faster_rcnn_checkpoint": {
+            "checkpoint_time": {
+                "mean": 0.24118073170001691
+            }
+        },
+        "faster_rcnn_train_fs": {
+            "cpu_util_simple": {
+                "75th-percentile": 83.2,
+                "90th-percentile": 89.3,
+                "mean": 68.16228236459071,
+                "median": 68.5
+            },
+            "disk_iops": {
+                "mean": 168.2379772967548
+            },
+            "disk_throughput_read": {
+                "mean": 14941339.595261494
+            },
+            "gpu_util": {
+                "75th-percentile": 56,
+                "90th-percentile": 61,
+                "mean": 52.088524147025225,
+                "median": 52
+            },
+            "samples_per_second": {
+                "mean": 666.1561165916396
+            }
+        },
+        "faster_rcnn_train_nofs": {
+            "cpu_util_simple": {
+                "75th-percentile": 69.4,
+                "90th-percentile": 74.5,
+                "mean": 62.80791899807596,
+                "median": 63.4
+            },
+            "gpu_util": {
+                "75th-percentile": 77,
+                "90th-percentile": 81,
+                "mean": 71.14511315581147,
+                "median": 72
+            },
+            "samples_per_second": {
+                "mean": 540.5610012894086
+            }
+        },
+        "faster_rcnn_validate_fs": {
+            "cpu_util_simple": {
+                "75th-percentile": 92.8,
+                "90th-percentile": 94.3,
+                "mean": 76.83533071265637,
+                "median": 88.5
+            },
+            "disk_iops": {
+                "mean": 283.15431154243186
+            },
+            "disk_throughput_read": {
+                "mean": 25385461.08792099
+            },
+            "gpu_util": {
+                "75th-percentile": 49,
+                "90th-percentile": 59,
+                "mean": 34.90430382305998,
+                "median": 38
+            },
+            "validation_epoch_time": {
+                "mean": 137.58404636383057
+            },
+            "validation_samples_per_second": {
+                "mean": 1151.8511335029111
+            }
+        },
+        "faster_rcnn_validate_nofs": {
+            "cpu_util_simple": {
+                "75th-percentile": 81.3,
+                "90th-percentile": 83.9,
+                "mean": 76.09877432292795,
+                "median": 77.7
+            },
+            "gpu_util": {
+                "75th-percentile": 30,
+                "90th-percentile": 31,
+                "mean": 22.128186905565798,
+                "median": 24
+            },
+            "validation_epoch_time": {
+                "mean": 171.5644182562828
+            },
+            "validation_samples_per_second": {
+                "mean": 923.6465909391605
+            }
+        }
+    },
+    "node_gpus": 8,
+    "single_node_average_metrics": {
+        "bert_checkpoint": {
+            "checkpoint_time": {
+                "mean": 1.5200686102563685
+            }
+        },
+        "bert_train_fs_with_pagecache": {
+            "cpu_util_simple": {
+                "75th-percentile": 11.875,
+                "90th-percentile": 12.075,
+                "mean": 11.219733138960839,
+                "median": 11.375
+            },
+            "gpu_util": {
+                "75th-percentile": 76.5,
+                "90th-percentile": 77.5,
+                "mean": 74.72183002501136,
+                "median": 75
+            },
+            "samples_per_second": {
+                "mean": 3119.708741347811
+            }
+        },
+        "bert_validate_fs_with_pagecache": {
+            "cpu_util_simple": {
+                "75th-percentile": 9.825,
+                "90th-percentile": 9.875,
+                "mean": 9.64233259364752,
+                "median": 9.75
+            },
+            "gpu_util": {
+                "75th-percentile": 68.5,
+                "90th-percentile": 69.5,
+                "mean": 67.15952158896424,
+                "median": 68
+            },
+            "validation_epoch_time": {
+                "mean": 14.923942252993584
+            },
+            "validation_samples_per_second": {
+                "mean": 10704.55225286894
+            }
+        },
+        "faster_rcnn_checkpoint": {
+            "checkpoint_time": {
+                "mean": 0.25590347670591795
+            }
+        },
+        "faster_rcnn_train_fs": {
+            "cpu_util_simple": {
+                "75th-percentile": 82.425,
+                "90th-percentile": 88.775,
+                "mean": 69.48452398920165,
+                "median": 70.425
+            },
+            "disk_iops": {
+                "mean": 178.11177187871246
+            },
+            "disk_throughput_read": {
+                "mean": 15808250.457568876
+            },
+            "gpu_util": {
+                "75th-percentile": 61.75,
+                "90th-percentile": 65.5,
+                "mean": 56.39687248212435,
+                "median": 57
+            },
+            "samples_per_second": {
+                "mean": 175.93286573172486
+            }
+        },
+        "faster_rcnn_train_nofs": {
+            "cpu_util_simple": {
+                "75th-percentile": 77.575,
+                "90th-percentile": 81.05,
+                "mean": 73.4582315757631,
+                "median": 73.875
+            },
+            "gpu_util": {
+                "75th-percentile": 50.25,
+                "90th-percentile": 55,
+                "mean": 45.19560270689824,
+                "median": 45.25
+            },
+            "samples_per_second": {
+                "mean": 199.8848750429195
+            }
+        },
+        "faster_rcnn_validate_fs": {
+            "cpu_util_simple": {
+                "75th-percentile": 90.525,
+                "90th-percentile": 91.9,
+                "mean": 86.88476182749388,
+                "median": 88.95
+            },
+            "disk_iops": {
+                "mean": 326.15863251877397
+            },
+            "disk_throughput_read": {
+                "mean": 29240056.688917667
+            },
+            "gpu_util": {
+                "75th-percentile": 50.5,
+                "90th-percentile": 58,
+                "mean": 40.1004715205818,
+                "median": 41.5
+            },
+            "validation_epoch_time": {
+                "mean": 122.6766644269228
+            },
+            "validation_samples_per_second": {
+                "mean": 326.6176534691013
+            }
+        },
+        "faster_rcnn_validate_nofs": {
+            "cpu_util_simple": {
+                "75th-percentile": 80.225,
+                "90th-percentile": 82.4,
+                "mean": 77.44005793991165,
+                "median": 77.85
+            },
+            "gpu_util": {
+                "75th-percentile": 30,
+                "90th-percentile": 31,
+                "mean": 22.241134329556825,
+                "median": 24
+            },
+            "validation_epoch_time": {
+                "mean": 170.14651848375797
+            },
+            "validation_samples_per_second": {
+                "mean": 232.86076857115182
+            }
+        }
+    }
+}

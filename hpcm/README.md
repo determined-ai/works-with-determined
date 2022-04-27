@@ -1,12 +1,12 @@
 # HPE Machine Learning Development System Installation Package
 
-This installation package supports the following versions:
+This installation package has tested on the following versions:
 
 | Supported Versions |
 |--------------------|
 | RHEL 8.5           |
 | HPCM 1.7           |
-| ML Dev Env 0.17.13 |
+| ML Dev Env 0.17.15 |
 
 It contains the following contents:
 
