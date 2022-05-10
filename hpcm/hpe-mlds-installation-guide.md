@@ -115,7 +115,7 @@ docker logs cadvisor &> cadvisor.log
 
 ## Step 5 - Check if the Services on the Agent Compute Node (Apollo 6500 with Nvidia GPUs) is running
 
-Assuming you are on the login node, run the following command to start the services and check if the services are running:
+Assuming you are on the agent node, run the following command to start the services and check if the services are running:
 
 ```bash
 /root/hpe-mlde-agent-cuda-start.sh
@@ -314,7 +314,7 @@ admin: active
 
 Go to the web interface of the HPE ML Sys Grafana at `<admin-address>/grafana/dashboards`. Use the default username and password `admin` and `admin`. You should see the following view:
 
-<img width="1110" alt="HPE ML Dev Env Grafana Dashboards" src="hpe-mlds-grafana-dashboards.png">
+<img width="1110" alt="HPE ML Dev Env Grafana Dashboards" src="hpe-mlds-grafana-dashboards-page.png">
 
 Click on the blue "Import" button on the top right corner under the "Manage" tab. You should see:
 
@@ -332,3 +332,26 @@ The imported dashboard should look like the below image:
 <img width="1110" alt="HPE ML Dev Env Grafana Page" src="hpe-mlds-grafana-page.png">
 
 If you have gone to this step, you are all set!
+
+
+## Troubleshooting
+
+1. As part of installing the agents, when running `hpe-mlde-agent-cuda-start.sh`, the logs shows:
+
+```
+Error: No such container: dgcm-exporter
+Error: No such container: cadvisor
+Error: No such container: hpe-mlde-agent
+```
+
+Is it an issue?
+
+- No, it is to delete duplicate containers if the container names are being used by a previous run. You can ignore the message.
+
+2. When installing the agents, I have seen the errors in the logs of the container `hpe-mlde-agent`. Should I be concerned about it?
+
+- No. As long as the status shows "UP" and the final check for the overall installation passes, it is fine. The errors in the containers are not related to installation.
+
+3. Some files, like `hpe-mlde-install-validation-tool-0.17.14.tar`, is not used in the installation guide. Am I doing anything wrong?
+
+- No. This file is to help debug the issue if the R&D team needs to interfere with it.
