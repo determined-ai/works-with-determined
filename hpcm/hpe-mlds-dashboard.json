@@ -20,11 +20,12 @@
   },
   "description": "GPU/CPU system metrics configured for clusters running Determined with cAdvisor and DCGM",
   "editable": true,
-  "gnetId": null,
+  "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 15,
-  "iteration": 1647566031714,
+  "id": null,
+  "iteration": 1652217192054,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
       "datasource": "Prometheus",
@@ -65,27 +66,28 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean"
+            "max"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.5.11",
       "targets": [
         {
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} > 0) or vector(0)) / sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"})) * 100",
+          "instant": false,
           "interval": "",
+          "intervalFactor": 1,
           "legendFormat": "",
-          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
-      "title": "Average Used GPUs Ratio",
+      "title": "Cluster Allocation (max)",
       "type": "gauge"
     },
     {
@@ -126,22 +128,18 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean"
+            "max"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.5.11",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
           "instant": false,
@@ -151,7 +149,7 @@
           "refId": "A"
         }
       ],
-      "title": "Average GPU Usage",
+      "title": "GPU (max)",
       "type": "gauge"
     },
     {
@@ -192,22 +190,18 @@
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
-            "mean"
+            "max"
           ],
           "fields": "",
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.5.11",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
           "instant": false,
@@ -217,7 +211,7 @@
           "refId": "A"
         }
       ],
-      "title": "Average GPU Memory Usage",
+      "title": "GPU Memory (max)",
       "type": "gauge"
     },
     {
@@ -264,16 +258,12 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.5.11",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{det_resource_pool=~\"$resourcepool\"}[$__rate_interval])) / sum(machine_cpu_cores) * 100",
           "instant": false,
@@ -283,7 +273,7 @@
           "refId": "A"
         }
       ],
-      "title": "Average CPU Usage",
+      "title": "CPU (avg)",
       "type": "gauge"
     },
     {
@@ -330,21 +320,22 @@
           "values": false
         },
         "showThresholdLabels": false,
-        "showThresholdMarkers": true,
-        "text": {}
+        "showThresholdMarkers": true
       },
       "pluginVersion": "7.5.11",
       "targets": [
         {
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"} - container_fs_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
+          "instant": false,
           "interval": "",
+          "intervalFactor": 1,
           "legendFormat": "",
-          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
-      "title": "Average Free Disk Space",
+      "title": "Free Disk Space (avg)",
       "type": "gauge"
     },
     {
@@ -362,7 +353,6 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
-              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -374,7 +364,14 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "min": 0,
@@ -465,27 +462,20 @@
         },
         "tooltip": {
           "mode": "single"
-        },
-        "tooltipOptions": {
-          "mode": "single"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} > 0) or vector(0)) / sum(count by (gpu) (DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"})) * 100",
           "instant": false,
           "interval": "",
           "legendFormat": "Cluster Allocation",
-          "queryType": "randomWalk",
           "refId": "A"
         }
       ],
-      "title": "Used GPUs Ratio",
+      "title": "Cluster Allocation",
       "type": "timeseries"
     },
     {
@@ -503,7 +493,6 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
-              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -515,7 +504,14 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "min": 0,
@@ -582,66 +578,84 @@
         },
         "tooltip": {
           "mode": "single"
-        },
-        "tooltipOptions": {
-          "mode": "single"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
+          "hide": false,
           "instant": false,
           "interval": "",
           "legendFormat": "GPU Util",
-          "queryType": "randomWalk",
-          "refId": "A"
+          "refId": "GPU Util"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "exemplar": true,
-          "expr": "avg by (label) (avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"} / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor)\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"}) ",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "GPU Util: {{label}}",
-          "queryType": "randomWalk",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "exemplar": true,
-          "expr": "avg by (label) (avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"} / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor)\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"}) ",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "GPU Memory: {{label}}",
-          "queryType": "randomWalk",
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "avg(avg(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu))",
           "hide": false,
           "interval": "",
           "legendFormat": "GPU Memory",
-          "queryType": "randomWalk",
-          "refId": "D"
+          "refId": "GPU Memory"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "avg by (label) (avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(sum(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu_uuid) / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor)\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"}) ",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GPU Util: {{label}}",
+          "refId": "GPU Util (label)"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "avg by (label) (avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) ((sum(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu_uuid) / on (gpu_uuid) group_right det_gpu_uuid_container_id)) / \non (container_id) group_right det_container_id_allocation_id)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor) / on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GPU Memory: {{label}}",
+          "refId": "GPU Memory (label)"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(sum(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu_uuid) / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor{experiment_id=~\"$experimentid\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GPU Util: Experiment {{experiment_id}}",
+          "refId": "GPU Util (experiment ID)"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "avg by (experiment_id) (avg by (allocation_id) (avg by (container_id) (\n(sum(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu_uuid) / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor{experiment_id=~\"$experimentid\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GPU Memory: Experiment {{experiment_id}}",
+          "refId": "GPU Memory (experiment ID)"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "avg by (task_id) (avg by (allocation_id) (avg by (container_id) (\n(sum(DCGM_FI_DEV_GPU_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu_uuid) / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor{task_id=~\"$taskid\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GPU Util: Task {{task_id}}",
+          "refId": "GPU Util (task ID)"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "avg by (task_id) (avg by (allocation_id) (avg by (container_id) (\n(sum(DCGM_FI_DEV_MEM_COPY_UTIL{det_resource_pool=~\"$resourcepool\"}) by (gpu_uuid) / on (gpu_uuid) group_right det_gpu_uuid_container_id))\n/ on (container_id) group_right det_container_id_allocation_id\n)\n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor{task_id=~\"$taskid\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "GPU Memory: Task {{task_id}}",
+          "refId": "GPU Memory (task ID)"
         }
       ],
-      "title": "GPU / GPU Memory Usage",
+      "title": "GPU / GPU Memory Utilization",
       "type": "timeseries"
     },
     {
@@ -659,7 +673,6 @@
             "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
-              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -671,7 +684,14 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": true
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -706,55 +726,58 @@
         },
         "tooltip": {
           "mode": "single"
-        },
-        "tooltipOptions": {
-          "mode": "single"
         }
       },
-      "pluginVersion": "8.3.3",
+      "pluginVersion": "7.5.11",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(rate(container_cpu_usage_seconds_total{det_resource_pool=~\"$resourcepool\"}[$__rate_interval])) / sum(machine_cpu_cores) * 100",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
           "legendFormat": "CPU Usage",
-          "queryType": "randomWalk",
-          "refId": "A"
+          "refId": "CPU Usage"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum by (label) (sum by (allocation_id) ((sum by (container_runtime_id) (rate(container_cpu_usage_seconds_total{}[$__rate_interval]))\n/ on (container_runtime_id) group_right det_container_id_runtime_container_id)\n/ on (container_id) group_right det_container_id_allocation_id) \n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor\n/ on (experiment_id) group_right det_experiment_id_label{label=~\"$tags\"})",
           "hide": false,
           "interval": "",
           "legendFormat": "CPU Usage: {{label}}",
-          "queryType": "randomWalk",
-          "refId": "B"
+          "refId": "CPU Usage (label)"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(container_memory_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(machine_memory_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
           "hide": false,
           "interval": "",
           "legendFormat": "Memory",
-          "queryType": "randomWalk",
-          "refId": "C"
+          "refId": "Memory"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "sum by (experiment_id) (sum by (allocation_id) ((sum by (container_runtime_id) (rate(container_cpu_usage_seconds_total{}[$__rate_interval]))\n/ on (container_runtime_id) group_right det_container_id_runtime_container_id)\n/ on (container_id) group_right det_container_id_allocation_id) \n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor{experiment_id=~\"$experimentid\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "CPU Usage: {{experiment_id}}",
+          "refId": "CPU Usage (experiment ID)"
+        },
+        {
+          "datasource": "Prometheus",
+          "exemplar": true,
+          "expr": "sum by (task_id) (sum by (allocation_id) ((sum by (container_runtime_id) (rate(container_cpu_usage_seconds_total{}[$__rate_interval]))\n/ on (container_runtime_id) group_right det_container_id_runtime_container_id)\n/ on (container_id) group_right det_container_id_allocation_id) \n/ on (allocation_id) group_right det_allocation_id_task_id_task_actor{task_id=~\"$taskid\"})",
+          "hide": false,
+          "interval": "",
+          "legendFormat": "CPU Usage: Task {{task_id}}",
+          "refId": "CPU Usage (task ID)"
         }
       ],
-      "title": "CPU / Memory Usage",
+      "title": "CPU / Memory Utilization",
       "type": "timeseries"
     },
     {
@@ -774,7 +797,6 @@
             "fillOpacity": 11,
             "gradientMode": "none",
             "hideFrom": {
-              "graph": false,
               "legend": false,
               "tooltip": false,
               "viz": false
@@ -786,7 +808,14 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "decimals": 0,
           "mappings": [],
@@ -879,17 +908,11 @@
         },
         "tooltip": {
           "mode": "single"
-        },
-        "tooltipOptions": {
-          "mode": "single"
         }
       },
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
+          "datasource": "Prometheus",
           "exemplar": true,
           "expr": "sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"} - container_fs_usage_bytes{det_resource_pool=~\"$resourcepool\"}) / sum(container_fs_limit_bytes{det_resource_pool=~\"$resourcepool\"}) * 100",
           "instant": false,
@@ -903,24 +926,15 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
-  "schemaVersion": 27,
+  "schemaVersion": 33,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
-        "allValue": null,
-        "current": {
-          "selected": true,
-          "tags": [],
-          "text": [],
-          "value": []
-        },
+        "current": {},
         "datasource": "Prometheus",
         "definition": "label_values(label)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "tags",
@@ -935,27 +949,12 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
       },
       {
-        "allValue": null,
-        "current": {
-          "selected": false,
-          "text": [
-            "All"
-          ],
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "datasource": "Prometheus",
         "definition": "label_values(det_resource_pool)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "resource-pool",
@@ -970,21 +969,58 @@
         "regex": "",
         "skipUrlSync": false,
         "sort": 0,
-        "tagValuesQuery": "",
-        "tags": [],
-        "tagsQuery": "",
-        "type": "query",
-        "useTags": false
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": "Prometheus",
+        "definition": "label_values(experiment_id)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Experiment ID",
+        "multi": true,
+        "name": "experimentid",
+        "options": [],
+        "query": {
+          "query": "label_values(experiment_id)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": "Prometheus",
+        "definition": "label_values(task_id)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Task ID",
+        "multi": true,
+        "name": "taskid",
+        "options": [],
+        "query": {
+          "query": "label_values(task_id)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Determined Cluster Hardware Utilization (cAdvisor and dcgm-exporter)",
-  "uid": "glTohhh7k",
-  "version": 9
+  "uid": "X7u8M8lnz",
+  "version": 10,
+  "weekStart": ""
 }
