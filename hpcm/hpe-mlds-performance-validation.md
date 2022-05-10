@@ -100,9 +100,11 @@ docker logs install-validation-tool-file-compare &> install-validation-tool-file
 
 , and send the log file and the output file `result.json` to us.
 
+If the performance tests fail on a mixed flavor of compute nodes, you might see outliers are detected in the performance validation tests. Please ignore the failures.
+
 ## Troubleshooting
 
-If you hit the following issue:
+1. If you hit the following issue:
 
 ```bash
 [root@login ~]# docker run -it --name install-validation-tool-file-compare -v $(pwd):/pwd determinedai/install-validation-tool:0.17.14 file-compare --reference /pwd/mlds-32-gpu-reference.json --install /pwd/result.json
