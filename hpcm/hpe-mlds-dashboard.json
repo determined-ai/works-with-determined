@@ -998,7 +998,7 @@
         "hide": 0,
         "includeAll": false,
         "label": "Task ID",
-        "multi": false,
+        "multi": true,
         "name": "taskid",
         "options": [],
         "query": {
