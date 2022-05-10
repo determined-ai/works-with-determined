@@ -87,7 +87,7 @@
           "refId": "A"
         }
       ],
-      "title": "Cluster Allocation",
+      "title": "Cluster Allocation (max)",
       "type": "gauge"
     },
     {
@@ -149,7 +149,7 @@
           "refId": "A"
         }
       ],
-      "title": "GPU",
+      "title": "GPU (max)",
       "type": "gauge"
     },
     {
@@ -211,7 +211,7 @@
           "refId": "A"
         }
       ],
-      "title": "GPU Memory",
+      "title": "GPU Memory (max)",
       "type": "gauge"
     },
     {
@@ -273,7 +273,7 @@
           "refId": "A"
         }
       ],
-      "title": "CPU",
+      "title": "CPU (avg)",
       "type": "gauge"
     },
     {
@@ -335,7 +335,7 @@
           "refId": "A"
         }
       ],
-      "title": "Free Disk Space",
+      "title": "Free Disk Space (avg)",
       "type": "gauge"
     },
     {
