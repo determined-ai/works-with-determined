@@ -1,0 +1,18 @@
+deployTarget: "GOOGLE"
+
+global:
+  postgresql:
+    # User "pachyderm" and database "pachyderm" must be created in advance
+    # Database must use Cloud DNS for the name (otherwise looks for a service)
+    # Password for user "pachyderm"
+    postgresqlPassword: "postgres.123"
+    postgresqlHost: "pachyderm-db.determined"
+    
+pachd:
+  storage:
+    google:
+      bucket: "determined-seldon-data"
+  externalService:
+    enabled: true 
+postgresql:
+  enabled: false

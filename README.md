@@ -5,7 +5,7 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
 ## Data Tools
 
 * [Pachyderm](https://www.pachyderm.com)
-  * An example Pachyderm integration can be found [in the platform example](example_platform/README.md)
+  * An example Pachyderm integration can be found [in the Pachyderm-Seldon example](pachyderm-seldon/README.md)
 * [DVC](https://www.dvc.org)
   * An example of using DVC to version data for Determined can be found [in the DVC example](dvc/README.md)
 * [Delta Lake](https://www.delta.io)
@@ -16,7 +16,7 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
 * [Algorithmia](https://algorithmia.com/)
   * An example of using Determined with Algorithmia to train and deploy an Object Detection model can be found in the [Algorithmia example](/algorithmia/README.md)
 * [Seldon Core](https://www.seldon.io/)
-  * An example of using Seldon as a part of an end to end platform can be found [in the platform example](example_platform/README.md)
+  * An example of using Seldon as a part of an end to end platform can be found [in the Pachyderm-Seldon example](pachyderm-seldon/README.md)
   * An example demonstrating automatic Seldon serving of models trained in Determined can be found [in the argo workflow example](kubeflow_pipelines/README.md)
 * [Spark](https://spark.apache.org/)
   * An example that uses Spark to perform batch inference can be found [in the spark example](spark_ecosystem/README.md)
