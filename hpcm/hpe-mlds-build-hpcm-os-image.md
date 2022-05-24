@@ -47,7 +47,13 @@ systemctl start docker
 systemctl start containerd
 
 # Run Postgres
-docker run -d --restart unless-stopped --name hpe-mlde-db --network host -v determined_db:/var/lib/postgresql/data -e POSTGRES_DB=determined -e POSTGRES_PASSWORD=postgres postgres:10
+docker run -d --restart unless-stopped --name hpe-mlde-db \
+  --log-driver journald \
+  --network host \
+  -v determined_db:/var/lib/postgresql/data \
+  -e POSTGRES_DB=determined \
+  -e POSTGRES_PASSWORD=postgres \
+  postgres:10
 
 # Create a configuration file master.yaml
 # Note that this is a minimal setup without a checkpoint storage.
@@ -93,18 +99,23 @@ resource_pools:
   - pool_name: aux-pool
     max_aux_containers_per_agent: 100
 EOF
+chmod 640 /etc/determined/master.yaml
 echo "### PRINT MASTER CONFIG START"
 cat /etc/determined/master.yaml
 echo "### PRINT MASTER CONFIG END"
 
 # Run the Master
-docker run -d --restart unless-stopped --name hpe-mlde-master --network host -v /etc/determined/master.yaml:/etc/determined/master.yaml determinedai/hpe-mlde-master:0.17.15
+docker run -d --restart unless-stopped --name hpe-mlde-master \
+  --log-driver journald \
+  --network host \
+  -v /etc/determined/master.yaml:/etc/determined/master.yaml \
+  determinedai/hpe-mlde-master:0.17.15
 ```
 
 And run:
 
 ```bash
-chmod 700 /root/hpe-mlde-master-start.sh
+chmod 750 /root/hpe-mlde-master-start.sh
 ```
 
 ### Baking OS images
@@ -176,6 +187,7 @@ systemctl start containerd
 
 # Run cAdvisor on 8080
 docker run -d --restart unless-stopped --name cadvisor \
+  --log-driver journald \
   --volume /:/rootfs:ro \
   --volume /var/run:/var/run:ro \
   --volume /sys:/sys:ro \
@@ -195,18 +207,24 @@ master_host: $(/opt/clmgr/bin/cm node show -n master -M --display-no-header | aw
 master_port: 8080
 resource_pool: aux-pool
 EOF
+chmod 640 /etc/determined/agent.yaml
 echo "### PRINT AGENT CONFIG START"
 cat /etc/determined/agent.yaml
 echo "### PRINT AGENT CONFIG END"
 
 # Run the Agent
-docker run -d --restart unless-stopped --name hpe-mlde-agent --network host -v /var/run/docker.sock:/var/run/docker.sock -v /etc/determined/agent.yaml:/etc/determined/agent.yaml determinedai/hpe-mlde-agent:0.17.15
+docker run -d --restart unless-stopped --name hpe-mlde-agent \
+    --log-driver=journald \
+    --network host \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /etc/determined/agent.yaml:/etc/determined/agent.yaml \
+    determinedai/hpe-mlde-agent:0.17.15
 ```
 
 And run:
 
 ```bash
-chmod 700 /root/hpe-mlde-login-start.sh
+chmod 750 /root/hpe-mlde-login-start.sh
 ```
 
 ### Baking OS images
@@ -354,10 +372,15 @@ systemctl start nvidia-persistenced nvidia-fabricmanager docker containerd
 modprobe nvidia-peermem
 
 # Run dcgm-exporter on port 9400 for agents with GPUs
-docker run -d --restart unless-stopped --name dgcm-exporter --gpus all -p 9400:9400 nvcr.io/nvidia/k8s/dcgm-exporter:2.3.2-2.6.3-ubuntu20.04
+docker run -d --restart unless-stopped --name dgcm-exporter \
+  --log-driver journald \
+  --gpus all \
+  -p 9400:9400 \
+  nvcr.io/nvidia/k8s/dcgm-exporter:2.3.2-2.6.3-ubuntu20.04
 
 # Run cAdvisor on 8080
 docker run -d --restart unless-stopped --name cadvisor \
+  --log-driver journald \
   --volume /:/rootfs:ro \
   --volume /var/run:/var/run:ro \
   --volume /sys:/sys:ro \
@@ -377,18 +400,25 @@ master_host: $(/opt/clmgr/bin/cm node show -n master -M --display-no-header | aw
 master_port: 8080
 resource_pool: compute-pool
 EOF
+chmod 640 /etc/determined/agent.yaml
 echo "### PRINT AGENT CONFIG START"
 cat /etc/determined/agent.yaml
 echo "### PRINT AGENT CONFIG END"
 
 # Run the Agent
-docker run -d --restart unless-stopped --name hpe-mlde-agent --network host --gpus all -v /var/run/docker.sock:/var/run/docker.sock -v /etc/determined/agent.yaml:/etc/determined/agent.yaml determinedai/hpe-mlde-agent:0.17.15
+docker run -d --restart unless-stopped --name hpe-mlde-agent \
+  --log-driver=journald \
+  --network host \
+  --gpus all \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /etc/determined/agent.yaml:/etc/determined/agent.yaml \
+  determinedai/hpe-mlde-agent:0.17.15
 ```
 
 And run:
 
 ```bash
-chmod 700 /root/hpe-mlde-agent-cuda-start.sh
+chmod 750 /root/hpe-mlde-agent-cuda-start.sh
 ```
 
 ### Baking OS images
