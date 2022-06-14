@@ -4,6 +4,7 @@ import logging
 
 import torch
 from torch import nn
+from determined import InvalidHP
 from determined.pytorch import DataLoader, PyTorchTrial
 from torchvision import models, transforms
 import numpy as np
@@ -27,6 +28,9 @@ class DogCatModel(PyTorchTrial):
 
         if load_weights:
             files = self.download_data()
+            if len(files) == 0:
+                print("No data. Aborting training.")
+                raise InvalidHP("No data")
             self.create_datasets(files)
 
         model = models.resnet50(pretrained=load_weights)
