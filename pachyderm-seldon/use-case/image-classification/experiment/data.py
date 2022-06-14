@@ -1,6 +1,5 @@
 import os
 import shutil
-import tarfile
 
 import python_pachyderm
 from python_pachyderm.proto.v2.pfs.pfs_pb2 import FileType
@@ -13,22 +12,8 @@ from torch.utils.data import Dataset
 # ======================================================================================================================
 
 class CatDogDataset(Dataset):
-    """Face Landmarks dataset."""
-
-    def __init__(self, root_dir, train, transform=None):
-        """
-        Args:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-        if train:
-            file_dir = 'train'
-        else:
-            file_dir = 'eval'
-        self.file_path = os.path.join(root_dir, file_dir)
-        self.files = [f for f in os.listdir(self.file_path) if f.endswith('.jpg')]
+    def __init__(self, files, transform=None):
+        self.files     = files
         self.transform = transform
 
     def __len__(self):
@@ -45,6 +30,7 @@ class CatDogDataset(Dataset):
             image = self.transform(image)
         label = 0 if img_name.startswith('dog') else 1
         sample = (image, label)
+        print(f"Loaded image: index='{idx}', name='{img_name}'")
         return sample
 
 # ======================================================================================================================
@@ -77,5 +63,6 @@ def download_pach_repo(pachyderm_host, pachyderm_port, repo, branch, root, token
             shutil.copyfileobj(src_file, dest_file)
 
     print('Download operation ended')
+    return files
 
 # ========================================================================================================

@@ -26,7 +26,8 @@ class DogCatModel(PyTorchTrial):
         logging.info(f"Loading weights : {load_weights}")
 
         if load_weights:
-            self.data_dir = self.download_data()
+            files = self.download_data()
+            self.create_datasets(files)
 
         model = models.resnet50(pretrained=load_weights)
         model.fc = nn.Linear(2048, 2)
@@ -72,22 +73,20 @@ class DogCatModel(PyTorchTrial):
     # -------------------------------------------------------------------------
 
     def build_training_data_loader(self) -> DataLoader:
-        ds = CatDogDataset(self.data_dir, train=True, transform=self.get_train_transforms())
-        return DataLoader(ds, batch_size=self.context.get_per_slot_batch_size())
+        return DataLoader(self.train_ds, batch_size=self.context.get_per_slot_batch_size())
 
     # -------------------------------------------------------------------------
 
     def build_validation_data_loader(self) -> DataLoader:
-        ds = CatDogDataset(self.data_dir, train=False, transform=self.get_test_transforms())
-        return DataLoader(ds, batch_size=self.context.get_per_slot_batch_size())
+        return DataLoader(self.val_ds, batch_size=self.context.get_per_slot_batch_size())
 
     # -------------------------------------------------------------------------
 
-    def download_data(self) -> str:
+    def download_data(self):
         data_config = self.context.get_data_config()
         data_dir = os.path.join(self.download_directory, 'data')
 
-        download_pach_repo(
+        files = download_pach_repo(
             data_config['pachyderm']['host'],
             data_config['pachyderm']['port'],
             data_config["pachyderm"]["repo"],
@@ -96,7 +95,18 @@ class DogCatModel(PyTorchTrial):
             data_config["pachyderm"]["token"]
         )
         print(f'Data dir set to : {data_dir}')
-        return data_dir
+
+        return [des for src, des in files ]
+
+    # -------------------------------------------------------------------------
+
+    def create_datasets(self, files):
+        train_size = int(0.81 * len(files))
+        val_size   = len(files) - train_size
+        train_ds, val_ds = torch.utils.data.random_split(files, [train_size, val_size])
+
+        self.train_ds = CatDogDataset(train_ds, transform=self.get_train_transforms())
+        self.val_ds   = CatDogDataset(val_ds,   transform=self.get_test_transforms())
 
     # -------------------------------------------------------------------------
 
