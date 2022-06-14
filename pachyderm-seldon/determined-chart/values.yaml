@@ -165,7 +165,7 @@ telemetry:
 # clusterName: Dev
 
 # defaultPassword sets the password for the admin and determined user accounts.
-defaultPassword: xxx
+defaultPassword: dai
 
 ## Configure how trial logs are stored.
 # logging:
@@ -202,5 +202,5 @@ defaultPassword: xxx
 
 ## Configure settings about how Determined launches the Fluentbit sidecar.
 # fluent:
-#   image: fluent/fluent-bit:1.6
+#   image: fluent/fluent-bit:1.9.3
 
