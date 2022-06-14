@@ -101,12 +101,14 @@ class DogCatModel(PyTorchTrial):
     # -------------------------------------------------------------------------
 
     def create_datasets(self, files):
+        print(f"Creating datasets from {len(files)} input files")
         train_size = int(0.81 * len(files))
         val_size   = len(files) - train_size
         train_ds, val_ds = torch.utils.data.random_split(files, [train_size, val_size])
 
         self.train_ds = CatDogDataset(train_ds, transform=self.get_train_transforms())
         self.val_ds   = CatDogDataset(val_ds,   transform=self.get_test_transforms())
+        print(f"Datasets created: train_size={train_size}, val_size={val_size}")
 
     # -------------------------------------------------------------------------
 
