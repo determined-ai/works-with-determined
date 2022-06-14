@@ -1,0 +1,37 @@
+{
+  "pipeline": {
+    "name": "determined-experiment"
+  },
+  "description": "Run a Determined Job",
+  "input": {
+    "pfs": {
+      "name": "data",
+      "repo": "experimentdata",
+      "branch": "master",
+      "glob": "/",
+      "s3": true
+    }
+  },
+  "transform": {
+    "cmd": ["/bin/sh"],
+    "stdin": ["python main.py --config-file const.yaml --git-url https://tybritten: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@github.com/tybritten/pach-determined.git --git-ref main --sub-dir dog_cat_model"],
+    "image": "vmtyler/determined:0.0.2",
+    "secrets": [
+      {
+        "name": "pach-determined-pipeline-secret",
+        "env_var": "DETERMINED_MASTER",
+        "key": "master"
+      },
+      {
+        "name": "pach-determined-pipeline-secret",
+        "env_var": "DETERMINED_USER",
+        "key": "user"
+      },
+      {
+        "name": "pach-determined-pipeline-secret",
+        "env_var": "DETERMINED_PASSWORD",
+        "key": "password"
+      }
+    ]
+  }
+}
