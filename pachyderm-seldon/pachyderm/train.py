@@ -94,15 +94,20 @@ def run_experiment(configfile, datapath):
         user    = os.getenv("DET_USER"),
         password= os.getenv("DET_PASSWORD"),
     )
-    exp = client.create_experiment(configfile, datapath)
-    print(f"Created experiment with id='{exp.id}'. Waiting for its completion...")
 
-    state = exp.wait()
-    print(f"Experiment with id='{exp.id}' ended with the following state: {state}")
+    try:
+        exp = client.create_experiment(configfile, datapath)
+        print(f"Created experiment with id='{exp.id}'. Waiting for its completion...")
 
-    if state == ExperimentState.COMPLETED:
-        return exp
-    else:
+        state = exp.wait()
+        print(f"Experiment with id='{exp.id}' ended with the following state: {state}")
+
+        if state == ExperimentState.COMPLETED:
+            return exp
+        else:
+            return None
+    except AssertionError:
+        print("Experiment exited with abnormal state")
         return None
 
 # =====================================================================================
