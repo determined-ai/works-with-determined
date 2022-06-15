@@ -24,7 +24,7 @@ class CatDogDataset(Dataset):
             idx = idx.tolist()
 
         img_name = self.files[idx]
-        image = io.imread(os.path.join(self.file_path, img_name))
+        image = io.imread(img_name)
         image = Image.fromarray(image)
         if self.transform:
             image = self.transform(image)
