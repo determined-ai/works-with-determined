@@ -186,7 +186,7 @@ def main():
     # --- Now, register checkpoint on model and download it
 
     model = get_or_create_model(client, args.model)
-    register_checkpoint(exp, model)
+    register_checkpoint(checkpoint, model)
 
     print(f"Ending pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")
 
