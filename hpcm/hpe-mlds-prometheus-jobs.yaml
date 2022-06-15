@@ -1,0 +1,70 @@
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+# - "first_rules.yml"
+# - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  - job_name: "prometheus"
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: det-master
+    honor_timestamps: true
+    scrape_interval: 1s
+    scrape_timeout: 1s
+    metrics_path: prom/det-state-metrics
+    scheme: http
+    follow_redirects: true
+    metric_relabel_configs:
+      - source_labels: [task_actor]
+        separator: ;
+        regex: /experiments/(.+)\/.*\/.*
+        target_label: experiment_id
+        replacement: $1
+        action: replace
+    static_configs:
+      - targets:
+          - $(/opt/clmgr/bin/cm node show -n master -M --display-no-header | awk '{print $3}'):8080
+  - job_name: cadvisor-dcgm
+    honor_timestamps: true
+    scrape_interval: 1s
+    scrape_timeout: 1s
+    metrics_path: /metrics
+    scheme: http
+    follow_redirects: true
+    metric_relabel_configs:
+      - source_labels: [id]
+        separator: ;
+        regex: /docker/(.*)
+        target_label: container_runtime_id
+        replacement: $1
+        action: replace
+      - source_labels: [__name__, UUID]
+        separator: ;
+        regex: DCGM.*;(.*)
+        target_label: gpu_uuid
+        replacement: $1
+        action: replace
+    http_sd_configs:
+      - follow_redirects: true
+        refresh_interval: 1m
+        url: http://$(/opt/clmgr/bin/cm node show -n master -M --display-no-header | awk '{print $3}'):8080/prom/det-http-sd-config

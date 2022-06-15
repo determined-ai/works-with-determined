@@ -1,0 +1,56 @@
+global:
+  scrape_interval: 1s
+  scrape_timeout: 1s
+  evaluation_interval: 1s
+scrape_configs:
+- job_name: prometheus
+  honor_timestamps: true
+  scrape_interval: 5s
+  scrape_timeout: 1s
+  metrics_path: /metrics
+  scheme: http
+  follow_redirects: true
+  static_configs:
+  - targets:
+    - localhost:9090
+- job_name: det-master
+  honor_timestamps: true
+  scrape_interval: 1s
+  scrape_timeout: 1s
+  metrics_path: prom/det-state-metrics
+  scheme: http
+  follow_redirects: true
+  metric_relabel_configs:
+  - source_labels: [task_actor]
+    separator: ;
+    regex: /experiments/(.+)\/.*\/.*
+    target_label: experiment_id
+    replacement: $1
+    action: replace
+  static_configs:
+  - targets:
+    - localhost:8080
+- job_name: cadvisor-dcgm
+  honor_timestamps: true
+  scrape_interval: 1s
+  scrape_timeout: 1s
+  metrics_path: /metrics
+  scheme: http
+  follow_redirects: true
+  metric_relabel_configs:
+  - source_labels: [id]
+    separator: ;
+    regex: /docker/(.*)
+    target_label: container_runtime_id
+    replacement: $1
+    action: replace
+  - source_labels: [__name__, UUID]
+    separator: ;
+    regex: DCGM.*;(.*)
+    target_label: gpu_uuid
+    replacement: $1
+    action: replace
+  http_sd_configs:
+  - follow_redirects: true
+    refresh_interval: 1m
+    url: http://det-master-address:8080/prom/det-http-sd-config

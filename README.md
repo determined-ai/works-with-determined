@@ -39,7 +39,13 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
   * [The NVIDIA RAPIDS example](rapids/README.md) shows how to integrate RAPIDS into model training on Determined, in order to perform GPU-accelerated data loading and preprocessing.
 
 ## Observability Tools
+
 * [Prometheus](https://prometheus.io)
   * [prometheus.yml](observability/prometheus/prometheus.yml) is a Prometheus configuration that works with the Prometheus endpoint that Determined surfaces to allow external observability tools to work with Determined
 * [Grafana](https://grafana.com)
   * [Determined Hardware Dashboard](observability/grafana/determined-hardware-grafana.json) is a pre-configured Grafana dashboard that contains queries and panels that integrate with a Prometheus endpoint to visualize cluster usage metrics
+
+## Cluster Managing Tool
+
+* [HPCM](hpcm/README.md)
+
