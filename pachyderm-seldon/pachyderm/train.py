@@ -1,3 +1,4 @@
+from determined.common.experimental.experiment import ExperimentState
 from determined.experimental import client
 import os
 import git
@@ -86,7 +87,7 @@ def setup_config(config_file, repo, pipeline, job_id):
 
 # =====================================================================================
 
-def create_exp(configfile, datapath):
+def run_experiment(configfile, datapath):
     print(f"Creating experiment on DeterminedAI...")
     client.login(
         master  = os.getenv("DET_MASTER"),
@@ -95,8 +96,22 @@ def create_exp(configfile, datapath):
     )
     exp = client.create_experiment(configfile, datapath)
     print(f"Created experiment with id='{exp.id}'. Waiting for its completion...")
-    exp.wait()
-    return exp
+
+    state = exp.wait()
+    print(f"Experiment with id='{exp.id}' ended with the following state: {state}")
+
+    if state == ExperimentState.COMPLETED:
+        return exp
+    else:
+        return None
+
+# =====================================================================================
+
+def get_checkpoint(exp):
+    try:
+        return exp.top_checkpoint()
+    except AssertionError:
+        return None
 
 # =====================================================================================
 
@@ -105,22 +120,21 @@ def get_or_create_model(client, model_name):
     models = client.get_models(name=model_name)
 
     if len(models) > 0:
-        print(f"Model already present. Updating it : '{model_name}'")
+        print(f"Model already present. Updating it : {model_name}")
         model = client.get_models(name=model_name)[0]
     else:
-        print(f"Creating a new model : '{model_name}'")
+        print(f"Creating a new model : {model_name}")
         model = client.create_model(model_name)
 
     return model
 
 # =====================================================================================
 
-def register_checkpoint(exp, model):
-    print("Registering checkpoint on model : {model.name}")
-    checkpoint = exp.top_checkpoint()
+def register_checkpoint(checkpoint, model):
+    print(f"Registering checkpoint on model : {model.name}")
     model.register_version(checkpoint.uuid)
     checkpoint.download("/pfs/out")
-    print("Checkpoint downloaded to output repository")
+    print("Checkpoint registered and downloaded to output repository")
 
 # =====================================================================================
 
@@ -147,10 +161,25 @@ def main():
 
     config_file = os.path.join(workdir, args.config)
 
-    # --- Read and setup experiment config file
+    # --- Read and setup experiment config file. Then, run experiment
 
     config = setup_config(config_file, args.repo, pipeline, job_id)
-    exp = create_exp(config, workdir)
+    exp    = run_experiment(config, workdir)
+
+    if exp is None:
+        print("Aborting pipeline as experiment did not succeed")
+        return
+
+    # --- Get best checkpoint from experiment. It may not exist if the experiment did not succeed
+
+    checkpoint = get_checkpoint(exp)
+
+    if checkpoint is None:
+        print("No checkpoint found (probably there was no data). Aborting pipeline")
+        return
+
+    # --- Now, register checkpoint on model and download it
+
     model = get_or_create_model(client, args.model)
     register_checkpoint(exp, model)
 
