@@ -30,7 +30,7 @@ class CatDogDataset(Dataset):
             image = self.transform(image)
         label = 0 if img_name.startswith('dog') else 1
         sample = (image, label)
-        print(f"Loaded image: index='{idx}', name='{img_name}'")
+        # print(f"Loaded image: index='{idx}', name='{img_name}'")
         return sample
 
 # ======================================================================================================================
@@ -47,7 +47,7 @@ def download_pach_repo(pachyderm_host, pachyderm_port, repo, branch, root, token
     for diff in client.diff_file((repo, branch), "/"):
         src_path = diff.new_file.file.path
         des_path = os.path.join(root, src_path[1:])
-        print(f"Got src='{src_path}', des='{des_path}'")
+        # print(f"Got src='{src_path}', des='{des_path}'")
 
         if diff.new_file.file_type == FileType.FILE:
             if src_path != "":
@@ -58,7 +58,7 @@ def download_pach_repo(pachyderm_host, pachyderm_port, repo, branch, root, token
 
     for src_path, des_path in files:
         src_file = client.get_file((repo, branch), src_path)
-        print(f'Downloading {src_path} to {des_path}')
+        # print(f'Downloading {src_path} to {des_path}')
 
         with open(des_path, "wb") as dest_file:
             shutil.copyfileobj(src_file, dest_file)
