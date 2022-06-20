@@ -1,0 +1,42 @@
+{
+  "pipeline": {
+    "name": "deploy_production"
+  },
+  "reprocess_spec": "every_job",
+  "description": "A service deploys a set of Seldon components via the Seldon Deploy REST APIs.",
+  "transform": {
+    "image": "vmtyler/pachyderm-deployer:0.3",
+    "cmd": ["/bin/bash"],
+    "stdin": [
+        "/usr/local/bin/python -u /deploy.py s3://${copy_models_COMMIT}.deploy_production.copy_models ${KUBERNETES_SERVICE_HOST} http://pachd.pachyderm:30600 pachyderm ${PACH_JOB_ID}"
+    ],
+      "secrets": [ 
+    {
+        "name": "deploy-config-secret",
+        "env_var": "SELDON_USER",
+        "key": "seldonUser"
+    },
+      {
+        "name": "deploy-config-secret",
+        "env_var": "SELDON_PASS",
+        "key": "seldonPassword"
+    },
+      {
+        "name": "deploy-config-secret",
+        "env_var": "SELDON_URI",
+        "key": "seldonUri"
+    } ,
+      {
+        "name": "deploy-config-secret",
+        "env_var": "ROBOT_TOKEN",
+        "key": "robotToken"
+    } ]
+  },
+  "input": {
+    "pfs": {
+      "repo": "copy_models",
+      "branch": "deploy_production",
+      "glob": "/",
+    }
+  },
+}

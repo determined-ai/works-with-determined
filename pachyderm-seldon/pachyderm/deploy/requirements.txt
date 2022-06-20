@@ -1,0 +1,2 @@
+seldon-deploy-sdk==1.5.0
+kubernetes==23.6.0

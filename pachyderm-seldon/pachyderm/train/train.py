@@ -135,10 +135,11 @@ def get_or_create_model(client, model_name):
 
 # =====================================================================================
 
-def register_checkpoint(checkpoint, model):
+def register_checkpoint(checkpoint, model, job_id):
     print(f"Registering checkpoint on model : {model.name}")
-    model.register_version(checkpoint.uuid)
-    checkpoint.download("/pfs/out")
+    version = model.register_version(checkpoint.uuid)
+    version.set_name(job_id)
+    checkpoint.download("/pfs/out/checkpoint")
     print("Checkpoint registered and downloaded to output repository")
 
 # =====================================================================================
@@ -186,7 +187,7 @@ def main():
     # --- Now, register checkpoint on model and download it
 
     model = get_or_create_model(client, args.model)
-    register_checkpoint(checkpoint, model)
+    register_checkpoint(checkpoint, model, job_id)
 
     print(f"Ending pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")
 
