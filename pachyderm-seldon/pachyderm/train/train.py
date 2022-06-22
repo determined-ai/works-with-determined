@@ -1,9 +1,32 @@
 from determined.common.experimental.experiment import ExperimentState
-from determined.experimental import client
+from determined.common.experimental import experiment
+from determined.experimental import Determined
+
 import os
 import git
 import argparse
 import yaml
+
+# =====================================================================================
+
+class DeterminedClient(Determined):
+    def __init__(self, master, user, password):
+        super().__init__(master=master, user=user, password=password)
+
+    def continue_experiment(self, config, parent_id):
+        resp = self._session.post(
+            "/api/v1/experiments",
+            json={
+                "activate": True,
+                "config": yaml.safe_dump(config),
+                "parentId": parent_id,
+            },
+        )
+
+        exp_id = resp.json()["experiment"]["id"]
+        exp = experiment.ExperimentReference(exp_id, self._session)
+
+        return exp
 
 # =====================================================================================
 
@@ -87,17 +110,23 @@ def setup_config(config_file, repo, pipeline, job_id):
 
 # =====================================================================================
 
-def run_experiment(configfile, datapath):
-    print(f"Creating experiment on DeterminedAI...")
-    client.login(
+def create_client():
+    return DeterminedClient(
         master  = os.getenv("DET_MASTER"),
         user    = os.getenv("DET_USER"),
         password= os.getenv("DET_PASSWORD"),
     )
 
+# =====================================================================================
+
+def execute_experiment(client, configfile, code_path, parent_id):
     try:
-        exp = client.create_experiment(configfile, datapath)
-        print(f"Created experiment with id='{exp.id}'. Waiting for its completion...")
+        if parent_id is None:
+            exp = client.create_experiment(configfile, code_path)
+        else:
+            exp = client.continue_experiment(configfile, parent_id)
+
+        print(f"Created experiment with id='{exp.id}' (parent_id='{parent_id}'). Waiting for its completion...")
 
         state = exp.wait()
         print(f"Experiment with id='{exp.id}' ended with the following state: {state}")
@@ -112,6 +141,19 @@ def run_experiment(configfile, datapath):
 
 # =====================================================================================
 
+def run_experiment(client, configfile, code_path, model):
+    version = model.get_version()
+
+    if version is None:
+        print("Creating a new experiment on DeterminedAI...")
+        return execute_experiment(client, configfile, code_path, None)
+    else:
+        print("Continuing experiment on DeterminedAI...")
+        parent_id = version.checkpoint.training.experiment_id
+        return execute_experiment(client, configfile, None, parent_id)
+
+# =====================================================================================
+
 def get_checkpoint(exp):
     try:
         return exp.top_checkpoint()
@@ -120,7 +162,7 @@ def get_checkpoint(exp):
 
 # =====================================================================================
 
-def get_or_create_model(client, model_name):
+def get_or_create_model(client, model_name, pipeline, repo):
 
     models = client.get_models(name=model_name)
 
@@ -129,7 +171,10 @@ def get_or_create_model(client, model_name):
         model = client.get_models(name=model_name)[0]
     else:
         print(f"Creating a new model : {model_name}")
-        model = client.create_model(model_name)
+        model = client.create_model(name=model_name, labels=[ pipeline, repo], metadata={
+            "pipeline": pipeline,
+            "repository": repo
+        })
 
     return model
 
@@ -139,6 +184,8 @@ def register_checkpoint(checkpoint, model, job_id):
     print(f"Registering checkpoint on model : {model.name}")
     version = model.register_version(checkpoint.uuid)
     version.set_name(job_id)
+    version.set_notes("Job_id/commit_id = " + job_id)
+
     checkpoint.download("/pfs/out/checkpoint")
     print("Checkpoint registered and downloaded to output repository")
 
@@ -170,7 +217,9 @@ def main():
     # --- Read and setup experiment config file. Then, run experiment
 
     config = setup_config(config_file, args.repo, pipeline, job_id)
-    exp    = run_experiment(config, workdir)
+    client = create_client()
+    model  = get_or_create_model(client, args.model, pipeline, args.repo)
+    exp    = run_experiment(client, config, workdir, model)
 
     if exp is None:
         print("Aborting pipeline as experiment did not succeed")
@@ -186,7 +235,6 @@ def main():
 
     # --- Now, register checkpoint on model and download it
 
-    model = get_or_create_model(client, args.model)
     register_checkpoint(checkpoint, model, job_id)
 
     print(f"Ending pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")

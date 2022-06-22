@@ -5,11 +5,17 @@ from kubernetes import client as kclient
 
 from seldon_deploy_sdk import (
     Configuration, ApiClient, SeldonDeploymentsApi,
-    SeldonDeployment, ObjectMeta, SeldonDeploymentSpec, PredictorSpec, SeldonPodSpec, PodSpec, Container, EnvVar, PredictiveUnit, Logger, Explainer,
+    SeldonDeployment, ObjectMeta, SeldonDeploymentSpec, PredictorSpec, SeldonPodSpec, PodSpec, Container, PredictiveUnit, Parameter, PredictiveUnitType, ParmeterType,
+    DriftDetectorApi, DetectorConfigData, DetectorConfiguration, BasicDetectorConfiguration, DetectorDeploymentConfiguration,
 )
 
 from seldon_deploy_sdk.auth import OIDCAuthenticator
 from seldon_deploy_sdk.rest import ApiException
+import ssl
+
+# =====================================================================================
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # =====================================================================================
 
@@ -65,14 +71,17 @@ def recreate_secrets(args):
 
 # =====================================================================================
 
-def create_model():
+def deploy_model():
+    seldon_url = "https://35.188.211.234"
+
     config = Configuration()
     config.host               = seldon_url + "/seldon-deploy/api/v1alpha1"
     config.oidc_client_id     = "sd-api"
     config.oidc_server        = seldon_url + "/auth/realms/deploy-realm"
     config.oidc_client_secret = "sd-api-secret"
-    config.username           = os.getenv("SELDON_USER")
-    config.password           = os.getenv("SELDON_PASS")
+    config.username           = "admin@seldon.io"  # os.getenv("SELDON_USER")
+    config.password           = "12341234"  # os.getenv("SELDON_PASS")
+    config.verify_ssl         = False
 
     # Authenticate against an OIDC provider
     auth = OIDCAuthenticator(config)
@@ -81,21 +90,25 @@ def create_model():
     api_client = ApiClient(config)
     seldon_api_instance = SeldonDeploymentsApi(api_client)
 
-    deployment_name = args.deployment_name
-    model_version   = args.model_version
-    bucket_uri      = args.bucket_uri
+    deployment_name = "dogcat-deploy"
+
+    # deployment_name = args.deployment_name
+    # model_version   = args.model_version
+    # bucket_uri      = args.bucket_uri
 
     namespace = "seldon"
     mldeployment = SeldonDeployment(
         api_version="machinelearning.seldon.io/v1",
         kind="SeldonDeployment",
-        metadata=ObjectMeta(name=deployment_name, namespace=namespace, labels={"fluentd": "true"}),
+        metadata=ObjectMeta(
+            name=deployment_name,
+            namespace=namespace,
+            labels={
+                "fluentd": "true"
+            }
+        ),
         spec=SeldonDeploymentSpec(
             name=deployment_name,
-            protocol="seldon",
-            annotations={
-                "seldon.io/engine-seldon-log-messages-externally": "true"
-            },
             predictors=[
                 PredictorSpec(
                     component_specs=[
@@ -103,31 +116,8 @@ def create_model():
                             spec=PodSpec(
                                 containers=[
                                     Container(
-                                        name="{}-container".format(
-                                            deployment_name
-                                        ),
-                                        env=[
-                                            EnvVar(
-                                                name="MODEL_URI", value=bucket_uri
-                                            ),
-                                            EnvVar(
-                                                name="MODEL_COMMIT_HASH",
-                                                value=model_version,
-                                            ),
-                                            EnvVar(
-                                                name="AWS_ACCESS_KEY_ID",
-                                                value="noauth",
-                                            ),
-                                            EnvVar(
-                                                name="AWS_SECRET_ACCESS_KEY",
-                                                value="noauth",
-                                            ),
-                                            EnvVar(
-                                                name="AWS_ENDPOINT_URL",
-                                                value=s3_endpoint,
-                                            ),
-                                            EnvVar(name="USE_SSL", value="false"),
-                                        ],
+                                        name=deployment_name + "-container",
+                                        image= "gcr.io/determined-ai/seldon/image-classification-model:1.0"
                                     )
                                 ]
                             )
@@ -136,23 +126,14 @@ def create_model():
                     name="default",
                     replicas=1,
                     graph=PredictiveUnit(
-                        children=[],
-                        implementation="SKLEARN_SERVER",
-                        model_uri=bucket_uri + "/dir",
-                        env_secret_ref_name="prod-seldon-init-container-secret",
-                        name="{}-container".format(deployment_name),
-                        logger=Logger(mode="all"),
-                    ),
-                    explainer=Explainer(
-                        type="AnchorTabular",
-                        model_uri=bucket_uri + "/dir",
-                        env_secret_ref_name="prod-seldon-init-container-secret",
-                        config={
-                            "seed": "112",
-                            "threshold": "0.85",
-                            "coverage_samples": "10",
-                            "batch_size": "10",
-                        },
+                        name=deployment_name + "-container",
+                        type="MODEL",
+                        parameters=[
+                            Parameter("det_master", "STRING", "http://35.223.115.122:8080/"),
+                            Parameter("user",       "STRING", "determined"),
+                            Parameter("password",   "STRING", "day"),
+                            Parameter("model_name", "STRING", "dogcat-model")
+                        ],
                     ),
                     traffic=100,
                 )
@@ -160,18 +141,14 @@ def create_model():
         ),
     )
 
-    try:
-        api_response = seldon_api_instance.delete_seldon_deployment(
-            deployment_name, namespace
-        )
-    except ApiException as e:
-        pass
+    # try:
+    #     seldon_api_instance.delete_seldon_deployment(deployment_name, namespace)
+    # except ApiException as e:
+    #     pass
 
     try:
-        time.sleep(2)
-        api_response = seldon_api_instance.create_seldon_deployment(
-            namespace, mldeployment
-        )
+        # time.sleep(2)
+        api_response = seldon_api_instance.create_seldon_deployment(namespace, mldeployment)
         print("create_seldon_deployment OK")
     except ApiException as e:
         print(
@@ -181,130 +158,130 @@ def create_model():
 
 # =====================================================================================
 
-def create_drift_detector():
-    drift_api_instance = DriftDetectorApi(api_client)
-    drift_detector = DetectorConfigData(
-        name=deployment_name,
-        config=DetectorConfiguration(
-            deployment=DetectorDeploymentConfiguration(
-                model_name=model_version[:5],
-                event_type="io.seldon.serving.inference.drift",
-                event_source="io.seldon.serving.seldon-seldondeployment-{}-drift".format(
-                    deployment_name
-                ),
-                reply_url="http://seldon-request-logger.seldon-logs",
-                protocol="seldon.http",
-                http_port="8080",
-                user_permission=8888,
-            ),
-            basic=BasicDetectorConfiguration(
-                drift_batch_size="1",
-                storage_uri=bucket_uri + "/dir/drift_detector_dir",
-                env_secret_ref="prod-seldon-init-container-secret",
-            ),
-        ),
-    )
-
-    try:
-        api_response = drift_api_instance.delete_drift_detector_seldon_deployment(
-            deployment_name, namespace, deployment_name
-        )
-    except ApiException as e:
-        pass
-
-    try:
-        time.sleep(5)
-        api_response = drift_api_instance.create_drift_detector_seldon_deployment(
-            deployment_name, namespace, drift_detector
-        )
-        print("create_drift_detector_seldon_deployment OK")
-    except ApiException as e:
-        print(
-            "Exception when calling SeldonDeploymentsApi->create_drift_detector_seldon_deployment: %s\n"
-            % e
-        )
-
-# =====================================================================================
-
-def create_outlier_detector():
-    outlier_api_instance = OutlierDetectorApi(api_client)
-
-    outlier_detector = DetectorConfigData(
-        name=deployment_name,
-        config=DetectorConfiguration(
-            deployment=DetectorDeploymentConfiguration(
-                model_name=model_version[:5],
-                event_type="io.seldon.serving.inference.outlier",
-                event_source="io.seldon.serving.seldon-seldondeployment-{}-outlier".format(
-                    deployment_name
-                ),
-                reply_url="http://seldon-request-logger.seldon-logs",
-                protocol="seldon.http",
-                http_port="8080",
-                user_permission=8888,
-            ),
-            basic=BasicDetectorConfiguration(
-                drift_batch_size="2",
-                storage_uri=bucket_uri + "/dir/outlier_detector_dir",
-                env_secret_ref="prod-seldon-init-container-secret",
-            ),
-        ),
-    )
-
-    try:
-        api_response = (
-            outlier_api_instance.delete_outlier_detector_seldon_deployment(
-                deployment_name, namespace, deployment_name
-            )
-        )
-    except ApiException as e:
-        pass
-
-    try:
-        time.sleep(5)
-        api_response = (
-            outlier_api_instance.create_outlier_detector_seldon_deployment(
-                deployment_name, namespace, outlier_detector
-            )
-        )
-        print("create_outlier_detector_seldon_deployment OK")
-    except ApiException as e:
-        print(
-            "Exception when calling SeldonDeploymentsApi->create_outlier_detector_seldon_deployment: %s\n"
-            % e
-        )
+# def create_drift_detector():
+#     drift_api_instance = DriftDetectorApi(api_client)
+#     drift_detector = DetectorConfigData(
+#         name=deployment_name,
+#         config=DetectorConfiguration(
+#             deployment=DetectorDeploymentConfiguration(
+#                 model_name=model_version[:5],
+#                 event_type="io.seldon.serving.inference.drift",
+#                 event_source="io.seldon.serving.seldon-seldondeployment-{}-drift".format(
+#                     deployment_name
+#                 ),
+#                 reply_url="http://seldon-request-logger.seldon-logs",
+#                 protocol="seldon.http",
+#                 http_port="8080",
+#                 user_permission=8888,
+#             ),
+#             basic=BasicDetectorConfiguration(
+#                 drift_batch_size="1",
+#                 storage_uri=bucket_uri + "/dir/drift_detector_dir",
+#                 env_secret_ref="prod-seldon-init-container-secret",
+#             ),
+#         ),
+#     )
+#
+#     try:
+#         api_response = drift_api_instance.delete_drift_detector_seldon_deployment(
+#             deployment_name, namespace, deployment_name
+#         )
+#     except ApiException as e:
+#         pass
+#
+#     try:
+#         time.sleep(5)
+#         api_response = drift_api_instance.create_drift_detector_seldon_deployment(
+#             deployment_name, namespace, drift_detector
+#         )
+#         print("create_drift_detector_seldon_deployment OK")
+#     except ApiException as e:
+#         print(
+#             "Exception when calling SeldonDeploymentsApi->create_drift_detector_seldon_deployment: %s\n"
+#             % e
+#         )
 
 # =====================================================================================
 
-def wait_for_seldon():
-    try:
-        while True:
-            api_response = seldon_api_instance.read_seldon_deployment(deployment_name, namespace)
-            if api_response.status.state == "Available":
-                print("SeldonDeployment is ready!")
-                break
-            else:
-                print("SeldonDeployment not ready yet")
-                time.sleep(10)
-        time.sleep(5)
-    except ApiException as e:
-        pass
+# def create_outlier_detector():
+#     outlier_api_instance = OutlierDetectorApi(api_client)
+#
+#     outlier_detector = DetectorConfigData(
+#         name=deployment_name,
+#         config=DetectorConfiguration(
+#             deployment=DetectorDeploymentConfiguration(
+#                 model_name=model_version[:5],
+#                 event_type="io.seldon.serving.inference.outlier",
+#                 event_source="io.seldon.serving.seldon-seldondeployment-{}-outlier".format(
+#                     deployment_name
+#                 ),
+#                 reply_url="http://seldon-request-logger.seldon-logs",
+#                 protocol="seldon.http",
+#                 http_port="8080",
+#                 user_permission=8888,
+#             ),
+#             basic=BasicDetectorConfiguration(
+#                 drift_batch_size="2",
+#                 storage_uri=bucket_uri + "/dir/outlier_detector_dir",
+#                 env_secret_ref="prod-seldon-init-container-secret",
+#             ),
+#         ),
+#     )
+#
+#     try:
+#         api_response = (
+#             outlier_api_instance.delete_outlier_detector_seldon_deployment(
+#                 deployment_name, namespace, deployment_name
+#             )
+#         )
+#     except ApiException as e:
+#         pass
+#
+#     try:
+#         time.sleep(5)
+#         api_response = (
+#             outlier_api_instance.create_outlier_detector_seldon_deployment(
+#                 deployment_name, namespace, outlier_detector
+#             )
+#         )
+#         print("create_outlier_detector_seldon_deployment OK")
+#     except ApiException as e:
+#         print(
+#             "Exception when calling SeldonDeploymentsApi->create_outlier_detector_seldon_deployment: %s\n"
+#             % e
+#         )
+
+# =====================================================================================
+
+# def wait_for_seldon():
+#     try:
+#         while True:
+#             api_response = seldon_api_instance.read_seldon_deployment(deployment_name, namespace)
+#             if api_response.status.state == "Available":
+#                 print("SeldonDeployment is ready!")
+#                 break
+#             else:
+#                 print("SeldonDeployment not ready yet")
+#                 time.sleep(10)
+#         time.sleep(5)
+#     except ApiException as e:
+#         pass
 
 # =====================================================================================
 
 def main():
     # --- Retrieve useful info from environment
 
-    job_id    = os.getenv("PACH_JOB_ID")
-    pipeline  = os.getenv("PPS_PIPELINE_NAME")
-    args      = parse_args()
+    # job_id    = os.getenv("PACH_JOB_ID")
+    # pipeline  = os.getenv("PPS_PIPELINE_NAME")
+    # args      = parse_args()
 
-    print(f"Starting pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")
+    # print(f"Starting pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")
 
     # --- Download code repository
-    recreate_secrets(args)
-    create_model()
-    wait_for_seldon()
+    #recreate_secrets(args)
+    deploy_model()
+    # wait_for_seldon()
 
 # =====================================================================================
 
