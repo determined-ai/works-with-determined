@@ -1,10 +1,9 @@
 import os
 import time
-from typing import Iterable, Dict, Union, List
+from typing import Iterable, Dict, Union, List, Optional
 
 from determined.experimental import Determined
 from determined.pytorch import load_trial_from_checkpoint_path
-from PIL import Image
 import numpy as np
 import logging
 import torch
@@ -14,7 +13,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 # =============================================================================
 
-class ImageClassificationModel(object):
+class ModelServer(object):
     """
     Model template. You can load your model parameters in __init__ from a location accessible at runtime
     """
@@ -41,15 +40,13 @@ class ImageClassificationModel(object):
         logging.info(f'Checkpoint loaded in {delta} seconds')
 
     # -------------------------------------------------------------------------
-# avoid np.ndarray and move line 48 into model
-    def predict(self, X: np.ndarray, names: Iterable[str] = None, meta: Dict = None) -> Union[np.ndarray, List, str, bytes]:
+
+    def predict(self, X: Union[np.ndarray, List, str, bytes, Dict], names: Optional[List[str]],
+                meta: Optional[Dict] = None) -> Union[np.ndarray, List, str, bytes, Dict]:
         logging.info(f"Received request : \n{X}")
 
-        image = Image.fromarray(X.astype(np.uint8))
-        logging.info(f"Image size : {image.size}")
-
         try:
-            prediction = self.model.predict(image)
+            prediction = self.model.predict(X, names, meta)
             logging.info(f"Prediction : {prediction}")
 
             return prediction

@@ -5,7 +5,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY ImageClassificationModel.py .
+COPY ModelServer.py .
 COPY service-account.json .
 
 EXPOSE 9000

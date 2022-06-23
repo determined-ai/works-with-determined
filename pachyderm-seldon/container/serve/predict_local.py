@@ -1,10 +1,10 @@
 import os
 from skimage import io
-from ImageClassificationModel import ImageClassificationModel
+from ModelServer import ModelServer
 
 
 if __name__ == '__main__':
-    model = ImageClassificationModel(det_master='DETERMINED_HOST', model_name='dogcat-model', user='determined', password='xxx')
+    model = ModelServer(det_master='DETERMINED_HOST', model_name='dogcat-model', user='determined', password='dai')
     print('Model loaded.')
 
     image = io.imread('dog.png')

@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, Sequence, Tuple, Union, cast
+from typing import Any, Dict, Sequence, Tuple, Union, cast, List
 import logging
 
 import torch
@@ -137,7 +137,11 @@ class DogCatModel(PyTorchTrial):
 
     # -------------------------------------------------------------------------
 
-    def predict(self, image: Image):
+    def predict(self, X: np.ndarray, names, meta) -> Union[np.ndarray, List, str, bytes, Dict]:
+
+        image = Image.fromarray(X.astype(np.uint8))
+        logging.info(f"Image size : {image.size}")
+
         image = self.get_test_transforms()(image)
         image = image.unsqueeze(0)
 

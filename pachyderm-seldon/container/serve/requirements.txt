@@ -1,7 +1,9 @@
-scikit-image==0.19.2
-determined==0.18.0
+determined==0.18.1
 seldon-core==1.13.1
-python_pachyderm==7.1.1
+
+# Experiment dependant
+scikit-image==0.19.2
+python_pachyderm==7.3.0
 
 # This is required to fix an issue with Flask
 Werkzeug==2.0.3
