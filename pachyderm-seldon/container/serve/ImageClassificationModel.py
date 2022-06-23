@@ -41,7 +41,7 @@ class ImageClassificationModel(object):
         logging.info(f'Checkpoint loaded in {delta} seconds')
 
     # -------------------------------------------------------------------------
-
+# avoid np.ndarray and move line 48 into model
     def predict(self, X: np.ndarray, names: Iterable[str] = None, meta: Dict = None) -> Union[np.ndarray, List, str, bytes]:
         logging.info(f"Received request : \n{X}")
 

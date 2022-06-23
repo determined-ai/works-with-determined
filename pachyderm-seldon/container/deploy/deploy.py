@@ -1,7 +1,7 @@
 import time
 import argparse
 import os
-from kubernetes import client as kclient
+# from kubernetes import client as kclient
 
 from seldon_deploy_sdk import (
     Configuration, ApiClient, SeldonDeploymentsApi,
@@ -10,12 +10,8 @@ from seldon_deploy_sdk import (
 )
 
 from seldon_deploy_sdk.auth import OIDCAuthenticator
+from seldon_deploy_sdk.auth.base import AuthMethod
 from seldon_deploy_sdk.rest import ApiException
-import ssl
-
-# =====================================================================================
-
-ssl._create_default_https_context = ssl._create_unverified_context
 
 # =====================================================================================
 
@@ -36,38 +32,38 @@ def parse_args():
 
 # =====================================================================================
 
-def recreate_secrets(args):
-    s3_token = os.getenv("ROBOT_TOKEN")
-    kubernetes_service_host = args.kubernetes_service_host
-    s3_endpoint = args.s3_endpoint
-
-    k_config = kclient.Configuration()
-    k_config.host = "https://" + kubernetes_service_host + ":443"
-    k_config.verify_ssl = False
-    aApiClient = kclient.ApiClient(k_config)
-    v1 = kclient.CoreV1Api(aApiClient)
-    try:
-        v1.delete_namespaced_secret(
-            namespace="seldon", name="prod-seldon-init-container-secret"
-        )
-        v1.delete_namespaced_secret(
-            namespace="seldon-logs", name="prod-seldon-init-container-secret"
-        )
-    except:
-        pass
-    sec = kclient.V1Secret()
-    sec.metadata = kclient.V1ObjectMeta(name="prod-seldon-init-container-secret")
-    sec.type = "Opaque"
-    sec.string_data = {
-        "RCLONE_CONFIG_S3_TYPE": "s3",
-        "RCLONE_CONFIG_S3_ACCESS_KEY_ID": s3_token,
-        "RCLONE_CONFIG_S3_SECRET_ACCESS_KEY": s3_token,
-        "RCLONE_CONFIG_S3_ENV_AUTH": "false",
-        "RCLONE_CONFIG_S3_ENDPOINT": s3_endpoint,
-        "RCLONE_CONFIG_S3_USE_SSL": "false",
-    }
-    v1.create_namespaced_secret(namespace="seldon",      body=sec)
-    v1.create_namespaced_secret(namespace="seldon-logs", body=sec)
+# def recreate_secrets(args):
+#     s3_token = os.getenv("ROBOT_TOKEN")
+#     kubernetes_service_host = args.kubernetes_service_host
+#     s3_endpoint = args.s3_endpoint
+#
+#     k_config = kclient.Configuration()
+#     k_config.host = "https://" + kubernetes_service_host + ":443"
+#     k_config.verify_ssl = False
+#     aApiClient = kclient.ApiClient(k_config)
+#     v1 = kclient.CoreV1Api(aApiClient)
+#     try:
+#         v1.delete_namespaced_secret(
+#             namespace="seldon", name="prod-seldon-init-container-secret"
+#         )
+#         v1.delete_namespaced_secret(
+#             namespace="seldon-logs", name="prod-seldon-init-container-secret"
+#         )
+#     except:
+#         pass
+#     sec = kclient.V1Secret()
+#     sec.metadata = kclient.V1ObjectMeta(name="prod-seldon-init-container-secret")
+#     sec.type = "Opaque"
+#     sec.string_data = {
+#         "RCLONE_CONFIG_S3_TYPE": "s3",
+#         "RCLONE_CONFIG_S3_ACCESS_KEY_ID": s3_token,
+#         "RCLONE_CONFIG_S3_SECRET_ACCESS_KEY": s3_token,
+#         "RCLONE_CONFIG_S3_ENV_AUTH": "false",
+#         "RCLONE_CONFIG_S3_ENDPOINT": s3_endpoint,
+#         "RCLONE_CONFIG_S3_USE_SSL": "false",
+#     }
+#     v1.create_namespaced_secret(namespace="seldon",      body=sec)
+#     v1.create_namespaced_secret(namespace="seldon-logs", body=sec)
 
 # =====================================================================================
 
@@ -79,8 +75,7 @@ def deploy_model():
     config.oidc_client_id     = "sd-api"
     config.oidc_server        = seldon_url + "/auth/realms/deploy-realm"
     config.oidc_client_secret = "sd-api-secret"
-    config.username           = "admin@seldon.io"  # os.getenv("SELDON_USER")
-    config.password           = "12341234"  # os.getenv("SELDON_PASS")
+    config.auth_method        = AuthMethod.CLIENT_CREDENTIALS
     config.verify_ssl         = False
 
     # Authenticate against an OIDC provider
@@ -131,7 +126,7 @@ def deploy_model():
                         parameters=[
                             Parameter("det_master", "STRING", "http://35.223.115.122:8080/"),
                             Parameter("user",       "STRING", "determined"),
-                            Parameter("password",   "STRING", "day"),
+                            Parameter("password",   "STRING", "dai"),
                             Parameter("model_name", "STRING", "dogcat-model")
                         ],
                     ),
