@@ -11,7 +11,7 @@ COPY service-account.json .
 EXPOSE 9000
 
 # Define environment variable
-ENV MODEL_NAME   ImageClassificationModel
+ENV MODEL_NAME   ModelServer
 ENV SERVICE_TYPE MODEL
 
 RUN chown -R 8888 /app

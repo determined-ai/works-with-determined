@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Iterable, Dict, Union, List, Optional
+from typing import Dict, Union, List, Optional
 
 from determined.experimental import Determined
 from determined.pytorch import load_trial_from_checkpoint_path
