@@ -2,7 +2,7 @@
   "pipeline": {
     "name": "dogs-and-cats-model"
   },
-  "description": "Detect changed files into a repository and triggers a retraining on that dataset",
+  "description": "Detects changed files into a repository and triggers a retraining on that dataset",
   "input": {
     "pfs": {
       "name": "data",
@@ -15,7 +15,7 @@
   "transform": {
     "cmd": ["/bin/sh"],
     "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref master --sub-dir pachyderm-seldon/use-case/image-classification/experiment --config const.yaml --repo dogs-and-cats --model dogs-and-cats"],
-    "image": "gcr.io/determined-ai/pachyderm-seldon/train:0.0.15",
+    "image": "gcr.io/determined-ai/pachyderm-seldon/train:0.0.18",
     "secrets": [
       {
         "name": "pipeline-secret",

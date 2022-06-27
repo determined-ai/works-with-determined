@@ -6,7 +6,7 @@ from seldon_core.seldon_client import SeldonClient
 if __name__ == '__main__':
     image = io.imread("dog.png")
 
-    sc = SeldonClient(deployment_name="dogcat-deploy", namespace="seldon", gateway_endpoint="DEPLOY_IP:80", gateway="istio")
+    sc = SeldonClient(deployment_name="dogcat-deploy", namespace="seldon", gateway_endpoint="SELDON_IP:80", gateway="istio")
     out = sc.predict(transport="rest", data=image)
 
     if out.success:

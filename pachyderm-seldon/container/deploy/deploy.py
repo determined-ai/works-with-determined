@@ -1,12 +1,15 @@
+import os
 import time
 import argparse
-import os
-# from kubernetes import client as kclient
+import yaml
 
 from seldon_deploy_sdk import (
     Configuration, ApiClient, SeldonDeploymentsApi,
-    SeldonDeployment, ObjectMeta, SeldonDeploymentSpec, PredictorSpec, SeldonPodSpec, PodSpec, Container, PredictiveUnit, Parameter, PredictiveUnitType, ParmeterType,
-    DriftDetectorApi, DetectorConfigData, DetectorConfiguration, BasicDetectorConfiguration, DetectorDeploymentConfiguration,
+    SeldonDeployment, ObjectMeta, SeldonDeploymentSpec, PredictorSpec, SeldonPodSpec, PodSpec, Container,
+    PredictiveUnit, Parameter,
+    DriftDetectorApi, DetectorConfigData, DetectorConfiguration, BasicDetectorConfiguration,
+    DetectorDeploymentConfiguration,
+    OutlierDetectorApi, VolumeMount, Volume, SecretVolumeSource
 )
 
 from seldon_deploy_sdk.auth import OIDCAuthenticator
@@ -17,93 +20,48 @@ from seldon_deploy_sdk.rest import ApiException
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Deploy a model to Seldon Deploy")
-    parser.add_argument("bucket_uri", type=str, help="Income classifier URI")
-    parser.add_argument(
-        "kubernetes_service_host", type=str, help="Kubernetes host"
-    )
-    parser.add_argument("s3_endpoint", type=str, help="Pachyderm S3 gateway")
-    parser.add_argument(
-        "deployment_name", type=str, help="Name of the resulting SeldonDeployment"
-    )
-    parser.add_argument(
-        "model_version", type=str, help="Commit hash of the deployment"
-    )
+    parser.add_argument("--deploy-name",       type=str, help="Name of the resulting SeldonDeployment")
+    parser.add_argument("--detect-bucket-uri", type=str, help="Bucket to use for all detectors")
+    parser.add_argument("--detect-batch-size", type=str, help="Batch size to use for all detectors")
+    parser.add_argument("--serving-image",     type=str, help="Container image to use to serve the model")
     return parser.parse_args()
 
 # =====================================================================================
 
-# def recreate_secrets(args):
-#     s3_token = os.getenv("ROBOT_TOKEN")
-#     kubernetes_service_host = args.kubernetes_service_host
-#     s3_endpoint = args.s3_endpoint
-#
-#     k_config = kclient.Configuration()
-#     k_config.host = "https://" + kubernetes_service_host + ":443"
-#     k_config.verify_ssl = False
-#     aApiClient = kclient.ApiClient(k_config)
-#     v1 = kclient.CoreV1Api(aApiClient)
-#     try:
-#         v1.delete_namespaced_secret(
-#             namespace="seldon", name="prod-seldon-init-container-secret"
-#         )
-#         v1.delete_namespaced_secret(
-#             namespace="seldon-logs", name="prod-seldon-init-container-secret"
-#         )
-#     except:
-#         pass
-#     sec = kclient.V1Secret()
-#     sec.metadata = kclient.V1ObjectMeta(name="prod-seldon-init-container-secret")
-#     sec.type = "Opaque"
-#     sec.string_data = {
-#         "RCLONE_CONFIG_S3_TYPE": "s3",
-#         "RCLONE_CONFIG_S3_ACCESS_KEY_ID": s3_token,
-#         "RCLONE_CONFIG_S3_SECRET_ACCESS_KEY": s3_token,
-#         "RCLONE_CONFIG_S3_ENV_AUTH": "false",
-#         "RCLONE_CONFIG_S3_ENDPOINT": s3_endpoint,
-#         "RCLONE_CONFIG_S3_USE_SSL": "false",
-#     }
-#     v1.create_namespaced_secret(namespace="seldon",      body=sec)
-#     v1.create_namespaced_secret(namespace="seldon-logs", body=sec)
+def deploy(args, secrets):
+    return secrets.namespace + "/" + args.deploy_name
 
 # =====================================================================================
 
-def deploy_model():
-    seldon_url = "https://35.188.211.234"
-
+def create_client(secrets) -> ApiClient:
+    print("Connecting to Seldon at : " + secrets.seldon_url)
     config = Configuration()
-    config.host               = seldon_url + "/seldon-deploy/api/v1alpha1"
+    config.host               = secrets.seldon_url + "/seldon-deploy/api/v1alpha1"
     config.oidc_client_id     = "sd-api"
-    config.oidc_server        = seldon_url + "/auth/realms/deploy-realm"
-    config.oidc_client_secret = "sd-api-secret"
+    config.oidc_server        = secrets.seldon_url + "/auth/realms/deploy-realm"
+    config.oidc_client_secret = secrets.client_secret
     config.auth_method        = AuthMethod.CLIENT_CREDENTIALS
     config.verify_ssl         = False
 
     # Authenticate against an OIDC provider
     auth = OIDCAuthenticator(config)
     config.id_token = auth.authenticate()
+    print("Connected.")
 
-    api_client = ApiClient(config)
-    seldon_api_instance = SeldonDeploymentsApi(api_client)
+    return ApiClient(config)
 
-    deployment_name = "dogcat-deploy"
+# =====================================================================================
 
-    # deployment_name = args.deployment_name
-    # model_version   = args.model_version
-    # bucket_uri      = args.bucket_uri
-
-    namespace = "seldon"
-    mldeployment = SeldonDeployment(
+def create_deploy_descriptor(args, secrets, det, model):
+    return SeldonDeployment(
         api_version="machinelearning.seldon.io/v1",
         kind="SeldonDeployment",
         metadata=ObjectMeta(
-            name=deployment_name,
-            namespace=namespace,
-            labels={
-                "fluentd": "true"
-            }
+            name=args.deploy_name,
+            namespace=secrets.namespace
         ),
         spec=SeldonDeploymentSpec(
-            name=deployment_name,
+            name=args.deploy_name,
             predictors=[
                 PredictorSpec(
                     component_specs=[
@@ -111,8 +69,22 @@ def deploy_model():
                             spec=PodSpec(
                                 containers=[
                                     Container(
-                                        name=deployment_name + "-container",
-                                        image= "gcr.io/determined-ai/seldon/image-classification-model:1.0"
+                                        name=args.deploy_name + "-container",
+                                        image=args.serving_image,
+                                        volume_mounts=[
+                                            VolumeMount(
+                                                name="config",
+                                                mount_path="/app/config"
+                                            )
+                                        ]
+                                    )
+                                ],
+                                volumes=[
+                                    Volume(
+                                        name="config",
+                                        secret=SecretVolumeSource(
+                                            secret_name="deployment-secret"
+                                        )
                                     )
                                 ]
                             )
@@ -121,13 +93,14 @@ def deploy_model():
                     name="default",
                     replicas=1,
                     graph=PredictiveUnit(
-                        name=deployment_name + "-container",
+                        name=args.deploy_name + "-container",
                         type="MODEL",
                         parameters=[
-                            Parameter("det_master", "STRING", "http://35.223.115.122:8080/"),
-                            Parameter("user",       "STRING", "determined"),
-                            Parameter("password",   "STRING", "dai"),
-                            Parameter("model_name", "STRING", "dogcat-model")
+                            Parameter("det_master",    "STRING", det.master),
+                            Parameter("user",          "STRING", det.username),
+                            Parameter("password",      "STRING", det.password),
+                            Parameter("model_name",    "STRING", model.name),
+                            Parameter("model_version", "STRING", model.version)
                         ],
                     ),
                     traffic=100,
@@ -136,147 +109,179 @@ def deploy_model():
         ),
     )
 
-    # try:
-    #     seldon_api_instance.delete_seldon_deployment(deployment_name, namespace)
-    # except ApiException as e:
-    #     pass
+# =====================================================================================
+
+def deploy_model(api_client, args, secrets, det, model):
+    api_instance = SeldonDeploymentsApi(api_client)
+
+    descriptor = create_deploy_descriptor(args, secrets, det, model)
 
     try:
-        # time.sleep(2)
-        api_response = seldon_api_instance.create_seldon_deployment(namespace, mldeployment)
-        print("create_seldon_deployment OK")
+        api_instance.delete_seldon_deployment(args.deploy_name, secrets.namespace)
+    except ApiException:
+        pass
+
+    try:
+        time.sleep(3)
+        api_instance.create_seldon_deployment(secrets.namespace, descriptor)
+        print(f"Deployment '{deploy(args, secrets)}' created")
+        return True
     except ApiException as e:
-        print(
-            "Exception when calling SeldonDeploymentsApi->create_seldon_deployment: %s\n"
-            % e
+        print(f"Deployment of '{deploy(args, secrets)}' failed: %s\n" % e)
+        return False
+
+# =====================================================================================
+
+def create_drift_detector(api_client, args, secrets, model):
+    api_instance = DriftDetectorApi(api_client)
+    drift_detector = DetectorConfigData(
+        name=args.deploy_name,
+        config=DetectorConfiguration(
+            deployment=DetectorDeploymentConfiguration(
+                model_name=model.version[:5],
+                event_type="io.seldon.serving.inference.drift",
+                event_source="io.seldon.serving.seldon-seldondeployment-{}-drift".format(args.deploy_name),
+                reply_url="http://seldon-request-logger.seldon-logs",
+                protocol="seldon.http",
+                http_port="8080",
+                user_permission=8888,
+            ),
+            basic=BasicDetectorConfiguration(
+                drift_batch_size=args.detect_batch_size,
+                storage_uri=args.detect_bucket_uri + "/seldon/drift_detector"
+            ),
+        ),
+    )
+
+    try:
+        api_instance.delete_drift_detector_seldon_deployment(args.deploy_name, secrets.namespace, args.deploy_name)
+    except ApiException:
+        pass
+
+    try:
+        time.sleep(3)
+        api_instance.create_drift_detector_seldon_deployment(args.deploy_name, secrets.namespace, drift_detector)
+        print(f"Drift detector '{deploy(args, secrets)}' created")
+        return True
+    except ApiException as e:
+        print(f"Deployment of drift detector '{deploy(args, secrets)}' failed: %s\n" % e)
+        return False
+
+# =====================================================================================
+
+def create_outlier_detector(api_client, args, secrets, model):
+    api_instance = OutlierDetectorApi(api_client)
+    outlier_detector = DetectorConfigData(
+        name=args.deploy_name,
+        config=DetectorConfiguration(
+            deployment=DetectorDeploymentConfiguration(
+                model_name=model.version[:5],
+                event_type="io.seldon.serving.inference.outlier",
+                event_source="io.seldon.serving.seldon-seldondeployment-{}-outlier".format(args.deploy_name),
+                reply_url="http://seldon-request-logger.seldon-logs",
+                protocol="seldon.http",
+                http_port="8080",
+                user_permission=8888,
+            ),
+            basic=BasicDetectorConfiguration(
+                drift_batch_size=args.detect_batch_size,
+                storage_uri=args.detect_bucket_uri + "/seldon/outlier_detector"
+            )
         )
+    )
+
+    try:
+        api_instance.delete_outlier_detector_seldon_deployment(args.deploy_name, secrets.namespace, args.deploy_name)
+    except ApiException:
+        pass
+
+    try:
+        time.sleep(3)
+        api_instance.create_outlier_detector_seldon_deployment(args.deploy_name, secrets.namespace, outlier_detector)
+        print(f"Outlier detector '{deploy(args, secrets)}' created")
+        return True
+    except ApiException as e:
+        print(f"Deployment of outlier detector '{deploy(args, secrets)}' failed: %s\n" % e)
+        return False
 
 # =====================================================================================
 
-# def create_drift_detector():
-#     drift_api_instance = DriftDetectorApi(api_client)
-#     drift_detector = DetectorConfigData(
-#         name=deployment_name,
-#         config=DetectorConfiguration(
-#             deployment=DetectorDeploymentConfiguration(
-#                 model_name=model_version[:5],
-#                 event_type="io.seldon.serving.inference.drift",
-#                 event_source="io.seldon.serving.seldon-seldondeployment-{}-drift".format(
-#                     deployment_name
-#                 ),
-#                 reply_url="http://seldon-request-logger.seldon-logs",
-#                 protocol="seldon.http",
-#                 http_port="8080",
-#                 user_permission=8888,
-#             ),
-#             basic=BasicDetectorConfiguration(
-#                 drift_batch_size="1",
-#                 storage_uri=bucket_uri + "/dir/drift_detector_dir",
-#                 env_secret_ref="prod-seldon-init-container-secret",
-#             ),
-#         ),
-#     )
-#
-#     try:
-#         api_response = drift_api_instance.delete_drift_detector_seldon_deployment(
-#             deployment_name, namespace, deployment_name
-#         )
-#     except ApiException as e:
-#         pass
-#
-#     try:
-#         time.sleep(5)
-#         api_response = drift_api_instance.create_drift_detector_seldon_deployment(
-#             deployment_name, namespace, drift_detector
-#         )
-#         print("create_drift_detector_seldon_deployment OK")
-#     except ApiException as e:
-#         print(
-#             "Exception when calling SeldonDeploymentsApi->create_drift_detector_seldon_deployment: %s\n"
-#             % e
-#         )
+def wait_for_deployment(api_client, args, secrets):
+    api_instance = SeldonDeploymentsApi(api_client)
+
+    try:
+        while True:
+            api_response = api_instance.read_seldon_deployment(args.deploy_name, secrets.namespace)
+            if api_response.status.state == "Available":
+                print(f"Deployment of '{deploy(args, secrets)} is ready")
+                break
+            else:
+                print(f"Waiting for deployment of '{deploy(args, secrets)}...")
+                time.sleep(5)
+        time.sleep(5)
+    except ApiException as e:
+        print(f"Raised error while waiting for deployment of '{deploy(args, secrets)}: %s\n" % e)
+        pass
 
 # =====================================================================================
 
-# def create_outlier_detector():
-#     outlier_api_instance = OutlierDetectorApi(api_client)
-#
-#     outlier_detector = DetectorConfigData(
-#         name=deployment_name,
-#         config=DetectorConfiguration(
-#             deployment=DetectorDeploymentConfiguration(
-#                 model_name=model_version[:5],
-#                 event_type="io.seldon.serving.inference.outlier",
-#                 event_source="io.seldon.serving.seldon-seldondeployment-{}-outlier".format(
-#                     deployment_name
-#                 ),
-#                 reply_url="http://seldon-request-logger.seldon-logs",
-#                 protocol="seldon.http",
-#                 http_port="8080",
-#                 user_permission=8888,
-#             ),
-#             basic=BasicDetectorConfiguration(
-#                 drift_batch_size="2",
-#                 storage_uri=bucket_uri + "/dir/outlier_detector_dir",
-#                 env_secret_ref="prod-seldon-init-container-secret",
-#             ),
-#         ),
-#     )
-#
-#     try:
-#         api_response = (
-#             outlier_api_instance.delete_outlier_detector_seldon_deployment(
-#                 deployment_name, namespace, deployment_name
-#             )
-#         )
-#     except ApiException as e:
-#         pass
-#
-#     try:
-#         time.sleep(5)
-#         api_response = (
-#             outlier_api_instance.create_outlier_detector_seldon_deployment(
-#                 deployment_name, namespace, outlier_detector
-#             )
-#         )
-#         print("create_outlier_detector_seldon_deployment OK")
-#     except ApiException as e:
-#         print(
-#             "Exception when calling SeldonDeploymentsApi->create_outlier_detector_seldon_deployment: %s\n"
-#             % e
-#         )
+class DeterminedInfo:
+    def __init__(self):
+        self.master   = os.getenv("DET_MASTER")
+        self.username = os.getenv("DET_USER")
+        self.password = os.getenv("DET_PASSWORD")
 
 # =====================================================================================
 
-# def wait_for_seldon():
-#     try:
-#         while True:
-#             api_response = seldon_api_instance.read_seldon_deployment(deployment_name, namespace)
-#             if api_response.status.state == "Available":
-#                 print("SeldonDeployment is ready!")
-#                 break
-#             else:
-#                 print("SeldonDeployment not ready yet")
-#                 time.sleep(10)
-#         time.sleep(5)
-#     except ApiException as e:
-#         pass
+class ModelInfo:
+    def __init__(self, file):
+        print(f"Reading model info file: {file}")
+        info = {}
+        with open(file, "r") as stream:
+            try:
+                info = yaml.safe_load(stream)
+
+                self.name       = info["name"]
+                self.version    = info["version"]
+                self.pipeline   = info["pipeline"]
+                self.repository = info["repo"]
+
+                print(f"Loaded model info: name='{self.name}', version='{self.version}', pipeline='{self.pipeline}', repo='{self.repository}'")
+            except yaml.YAMLError as exc:
+                print(exc)
+
+# =====================================================================================
+
+class SecretInfo:
+    def __init__(self):
+        self.seldon_url    = os.getenv("SEL_URL")
+        self.client_secret = os.getenv("SEL_SECRET")
+        self.namespace     = os.getenv("SEL_NAMESPACE")
 
 # =====================================================================================
 
 def main():
-    # --- Retrieve useful info from environment
+    args    = parse_args()
+    det     = DeterminedInfo()
+    model   = ModelInfo("/pfs/data/model-info.yaml")
+    secrets = SecretInfo()
 
-    # job_id    = os.getenv("PACH_JOB_ID")
-    # pipeline  = os.getenv("PPS_PIPELINE_NAME")
-    # args      = parse_args()
+    print(f"Starting pipeline: deploy-name='{args.deploy_name}', model='{model.name}', version='{model.version}'")
 
-    # print(f"Starting pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")
+    api_client = create_client(secrets)
 
-    # --- Download code repository
-    #recreate_secrets(args)
-    deploy_model()
-    # wait_for_seldon()
+    if not deploy_model(api_client, args, secrets, det, model):
+        return
+
+    if not create_drift_detector(api_client, args, secrets, model):
+        return
+
+    if not create_outlier_detector(api_client, args, secrets, model):
+        return
+
+    wait_for_deployment(api_client, args, secrets)
+
+    print(f"Ending pipeline: deploy-name='{args.deploy_name}', model='{model.name}', version='{model.version}'")
 
 # =====================================================================================
 

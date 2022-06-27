@@ -191,6 +191,23 @@ def register_checkpoint(checkpoint, model, job_id):
 
 # =====================================================================================
 
+def write_model_info(file, model_name, model_version, pipeline, repo):
+    print(f"Writing model information to file: {file}")
+
+    model = dict()
+    model["name"]     = model_name
+    model["version"]  = model_version
+    model["pipeline"] = pipeline
+    model["repo"]     = repo
+
+    with open(file, "w") as stream:
+        try:
+            yaml.safe_dump(model, stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+# =====================================================================================
+
 def main():
     # --- Retrieve useful info from environment
 
@@ -236,6 +253,7 @@ def main():
     # --- Now, register checkpoint on model and download it
 
     register_checkpoint(checkpoint, model, job_id)
+    write_model_info("/pfs/out/model-info.yaml", args.model, job_id, pipeline, args.repo)
 
     print(f"Ending pipeline: name='{pipeline}', repo='{args.repo}', job_id='{job_id}'")
 

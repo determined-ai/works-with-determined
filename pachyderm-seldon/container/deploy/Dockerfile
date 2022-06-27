@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt /app
 RUN pip install -r requirements.txt
 
-COPY train.py /app
+COPY deploy.py /app
 
 ENV PYTHONUNBUFFERED=1
