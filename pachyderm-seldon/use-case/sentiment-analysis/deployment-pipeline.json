@@ -1,20 +1,20 @@
 {
   "pipeline": {
-    "name": "dogs-and-cats-deploy"
+    "name": "market-sentiment-deploy"
   },
   "description": "Deploys a model into production via the Seldon Deploy REST APIs.",
   "input": {
     "pfs": {
       "name": "data",
-      "repo": "dogs-and-cats-model",
+      "repo": "market-sentiment-model",
       "branch": "master",
       "glob": "/"
     }
   },
   "transform": {
     "cmd": ["/bin/sh"],
-    "stdin": ["python deploy.py --deploy-name dogcat-deploy --detect-bucket-uri gs://determined-seldon-data --detect-batch-size 4 --serving-image gcr.io/determined-ai/pachyderm-seldon/serve:0.0.6"],
-    "image": "gcr.io/determined-ai/pachyderm-seldon/deploy:0.0.7",
+    "stdin": ["python deploy.py --deploy-name marketsentiment-deploy --detect-bucket-uri gs://determined-seldon-data --detect-batch-size 4 --serving-image gcr.io/determined-ai/pachyderm-seldon/serve:0.0.1"],
+    "image": "gcr.io/determined-ai/pachyderm-seldon/deploy:0.0.1",
     "secrets": [ 
       {
         "name": "pipeline-secret",
