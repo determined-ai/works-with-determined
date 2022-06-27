@@ -13,7 +13,8 @@ class DeterminedClient(Determined):
     def __init__(self, master, user, password):
         super().__init__(master=master, user=user, password=password)
 
-    def continue_experiment(self, config, parent_id):
+    def continue_experiment(self, config, parent_id, checkpoint_uuid):
+        config["searcher"]["source_checkpoint_uuid"] = checkpoint_uuid
         resp = self._session.post(
             "/api/v1/experiments",
             json={
@@ -119,12 +120,14 @@ def create_client():
 
 # =====================================================================================
 
-def execute_experiment(client, configfile, code_path, parent_id):
+def execute_experiment(client, configfile, code_path, checkpoint):
     try:
-        if parent_id is None:
+        if checkpoint is None:
+            parent_id = None
             exp = client.create_experiment(configfile, code_path)
         else:
-            exp = client.continue_experiment(configfile, parent_id)
+            parent_id = checkpoint.training.experiment_id
+            exp = client.continue_experiment(configfile, parent_id, checkpoint.uuid)
 
         print(f"Created experiment with id='{exp.id}' (parent_id='{parent_id}'). Waiting for its completion...")
 
@@ -149,8 +152,7 @@ def run_experiment(client, configfile, code_path, model):
         return execute_experiment(client, configfile, code_path, None)
     else:
         print("Continuing experiment on DeterminedAI...")
-        parent_id = version.checkpoint.training.experiment_id
-        return execute_experiment(client, configfile, None, parent_id)
+        return execute_experiment(client, configfile, None, version.checkpoint)
 
 # =====================================================================================
 

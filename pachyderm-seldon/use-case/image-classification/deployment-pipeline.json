@@ -13,8 +13,8 @@
   },
   "transform": {
     "cmd": ["/bin/sh"],
-    "stdin": ["python deploy.py --deploy-name dogcat-deploy --detect-bucket-uri gs://determined-seldon-data --detect-batch-size 4 --serving-image gcr.io/determined-ai/pachyderm-seldon/serve:0.0.4"],
-    "image": "gcr.io/determined-ai/pachyderm-seldon/deploy:0.0.4",
+    "stdin": ["python deploy.py --deploy-name dogcat-deploy --detect-bucket-uri gs://determined-seldon-data --detect-batch-size 4 --serving-image gcr.io/determined-ai/pachyderm-seldon/serve:0.0.5"],
+    "image": "gcr.io/determined-ai/pachyderm-seldon/deploy:0.0.5",
     "secrets": [ 
       {
         "name": "pipeline-secret",

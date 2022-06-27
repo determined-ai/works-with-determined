@@ -9,7 +9,7 @@ from seldon_deploy_sdk import (
     PredictiveUnit, Parameter,
     DriftDetectorApi, DetectorConfigData, DetectorConfiguration, BasicDetectorConfiguration,
     DetectorDeploymentConfiguration,
-    OutlierDetectorApi, VolumeMount, Volume, SecretVolumeSource
+    OutlierDetectorApi, VolumeMount, Volume, SecretVolumeSource, EnvVar
 )
 
 from seldon_deploy_sdk.auth import OIDCAuthenticator
@@ -52,6 +52,17 @@ def create_client(secrets) -> ApiClient:
 
 # =====================================================================================
 
+def build_metadata(model):
+    return "name: {0}\n" \
+           "versions: [ {1} ]\n" \
+           "platform: seldon\n" \
+            "custom:\n" \
+           "    repository: {2}\n" \
+           "    pipeline: {3}"\
+            .format(model.name, model.version, model.repository, model.pipeline)
+
+# =====================================================================================
+
 def create_deploy_descriptor(args, secrets, det, model):
     return SeldonDeployment(
         api_version="machinelearning.seldon.io/v1",
@@ -75,6 +86,12 @@ def create_deploy_descriptor(args, secrets, det, model):
                                             VolumeMount(
                                                 name="config",
                                                 mount_path="/app/config"
+                                            )
+                                        ],
+                                        env=[
+                                            EnvVar(
+                                                name="MODEL_METADATA",
+                                                value=build_metadata(model)
                                             )
                                         ]
                                     )

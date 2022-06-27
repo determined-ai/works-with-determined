@@ -40,6 +40,9 @@ class ModelServer(object):
         delta = end - start
         logging.info(f'Checkpoint loaded in {delta} seconds')
 
+        self.model   = model_name
+        self.version = model_version
+
     # -------------------------------------------------------------------------
 
     def get_version(self, client, model_name, model_version) -> ModelVersion:
@@ -49,6 +52,16 @@ class ModelServer(object):
                 return version
 
         raise AssertionError(f"Version '{model_version}' not found inside model '{model_name}'")
+
+    # -------------------------------------------------------------------------
+
+    def init_metadata(self):
+        meta = {
+            "name": self.model,
+            "versions": [ self.version ],
+            "platform": "seldon",
+        }
+        return meta
 
     # -------------------------------------------------------------------------
 
