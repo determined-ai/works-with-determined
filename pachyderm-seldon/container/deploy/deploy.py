@@ -53,7 +53,8 @@ def create_client(secrets) -> ApiClient:
 # =====================================================================================
 
 def build_metadata(model):
-    return "name: {0}\n" \
+    return "---" \
+           "name: {0}\n" \
            "versions: [ {1} ]\n" \
            "platform: seldon\n" \
             "custom:\n" \
