@@ -1,0 +1,31 @@
+name: FinBertPyTorch_distributed
+hyperparameters:
+    global_batch_size: 16  
+    learning_rate: 2.0e-5
+    lr_scheduler_epoch_freq: 1
+    model_type: 'bert'
+    adam_epsilon: 1.0e-8
+    weight_decay: 0
+    num_warmup_steps: 0
+    max_seq_length: 64
+    doc_stride: 128
+    n_best_size: 20
+    null_score_diff_threshold: 0.0
+    max_grad_norm: 1.0
+    num_training_steps: 436 
+resources:
+    slots_per_trial: 2
+searcher:
+    name: single
+    metric: validation_loss
+    max_length:
+        batches: 436
+    smaller_is_better: false
+min_validation_period:
+    records: 388 
+data:
+    pretrained_model_name: "bert-base-uncased"
+    download_data: False
+    task: "classification"
+    local_path: ./data/sentiment_data
+entrypoint: model_def:FinBERTPyTorch
