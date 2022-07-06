@@ -76,7 +76,7 @@ gcloud container node-pools create ${NAME}-gpu-node-pool \
   --enable-autoscaling \
   --min-nodes=0 \
   --max-nodes=${MAX_NODES} \
-  --machine-type=n1-standard-32 \
+  --machine-type=n1-standard-4 \
   --scopes=storage-full,cloud-platform
 
 # Deploy a DaemonSet that enables the GPUs.

@@ -14,7 +14,7 @@
   },
   "transform": {
     "cmd": ["/bin/sh"],
-    "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref master --sub-dir pachyderm-seldon/use-case/sentiment/analysis/experiment --config const.yaml --repo market-sentiment --model market-sentiment"],
+    "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref master --sub-dir pachyderm-seldon/use-case/sentiment-analysis/experiment --config const.yaml --repo market-sentiment --model market-sentiment"],
     "image": "gcr.io/determined-ai/pachyderm-seldon/train:0.0.1",
     "secrets": [
       {

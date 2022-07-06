@@ -11,7 +11,7 @@ global:
 pachd:
   storage:
     google:
-      bucket: "determined-seldon-data"
+      bucket: "determined-pachyderm-data"
   externalService:
     enabled: true 
 postgresql:
