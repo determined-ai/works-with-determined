@@ -17,8 +17,8 @@ We assume that there is a public GitHub repository somewhere, from which our pip
 For this use case, the ***Dogs vs Cats*** dataset will be considered. It is hosted on Kaggle and it is located at the following address: https://www.kaggle.com/c/dogs-vs-cats/data?select=train.zip . 
 This dataset contains 25000 images and here is an example of a dog and a cat present inside that dataset:
 
-![Dog](dog.jpg)
-![Cat](cat.jpg)
+![Dog](image-classification/dog.jpg)
+![Cat](image-classification/cat.jpg)
 
 To keep things simple, we will consider only a small subset of all files and we will put them into two different folders under the `dataset` one. They are:
 
@@ -66,15 +66,15 @@ pachctl put file dogs-and-cats@master:/data -f data/ -r
 
 The `training pipeline` will be triggered almost immediately and, after a couple of minutes, we should see the experiment on Determined AI' UI, as it is shown below:
 
-![screenshot](determined-experiment.png)
+![screenshot](image-classification/determined-experiment.png)
 
 Notice that the experiment has some tags that correspond to the source repository, the Pachyderm's job id and the pipeline name that triggered the experiment. When the experiment completes, we can also see the new model present into the model registry and with one version linked to it:
 
-![screenshot](determined-model.png)
+![screenshot](image-classification/determined-model.png)
 
 When the first pipeline will end, the `deployment pipeline` will be triggered and after a couple of minutes we should be able to see the deployment on Seldon:
 
-![screenshot](seldon-deployment.png)
+![screenshot](image-classification/seldon-deployment.png)
 
 On the top of the image above, we can see the deployment just created, `dogcat-deploy`, on the left the custom container running (our serving image) and on the right the two detectors (drift and outlier).
 
@@ -83,7 +83,7 @@ On the top of the image above, we can see the deployment just created, `dogcat-d
 
 Now that the serving image is running, the next step is to call our deployment to get predictions and we have the `pachyderm/seldon/predict_web.py` code  to do that. We have to pass the Seldon's IP address as a command line parameter and, running the code, you should see a window opening like the following one:
 
-![screenshot](prediction.png)
+![screenshot](image-classification/prediction.png)
  
 
 ## Repeating the process ############################
@@ -96,11 +96,11 @@ pachctl put file dogs-and-cats@master:/delta -f delta/ -r
 
 As usual, the training pipeline will trigger and on the Determined AI's UI we will see the second experiment, which has the `ForkedFrom` column valued, meaning that we are continuing from a previous experiment:
 
-![screenshot](determined-experiment-2.png)
+![screenshot](image-classification/determined-experiment-2.png)
 
 And, on the model registry, we can see the second version of the model being added with the name equal to the second job ID:
 
-![screenshot](determined-model-2.png)
+![screenshot](image-classification/determined-model-2.png)
 
 ---
 [Up](../README.md)
