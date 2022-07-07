@@ -22,6 +22,7 @@ In order to keep the explanation simple, let's break the integration description
 - [Software prerequisites](doc/prerequisites.md)
 - [Environment setup](doc/environment.md)
 - [Building the containers](doc/containers.md)
+- [Examining the pipelines](doc/pipelines.md)
 - Running use cases:
     - [Image classification](doc/image-classification.md)
     - [Market sentiment](doc/sentiment-analysis.md)
