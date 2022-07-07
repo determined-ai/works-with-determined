@@ -202,5 +202,5 @@ kubectl create secret generic deployment-secret -n seldon --from-file=service-ac
 
 If you want to run predictions locally, you have to put this file into `container/serve/config`. Then, you can see the predictions running the `container/serve/predict_local.py` script.
 
-
+---
 [Up](../README.md) | [Next](containers.md)

@@ -40,4 +40,5 @@ The process works as follows:
   - wait for the deployment to be ready
 
 
+---
 [Up](../README.md) | [Next](prerequisites.md)

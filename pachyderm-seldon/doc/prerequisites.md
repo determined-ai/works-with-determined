@@ -61,4 +61,5 @@ With Python 3.7 (or above) installed, the `det` command can be installed with ju
 pip install determined
 ```
 
+---
 [Up](../README.md) | [Next](environment.md)

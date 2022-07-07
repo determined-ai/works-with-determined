@@ -65,4 +65,5 @@ docker push gcr.io/PROJECT/pachyderm-seldon/serve:0.0.1
 
 In this case, if you need to rebuild the serving image, remember to update the deployment pipeline descriptor with the correct image version (here are two different images: one for the pipeline and another one passed as a parameter to the script).
 
-
+---
+[Up](../README.md) | [Next](pipelines.md)
