@@ -1,7 +1,7 @@
 name: FinBertPyTorch_Const
 hyperparameters:
     max_seq_length: 64
-    global_batch_size: 8
+    global_batch_size: 64
     learning_rate: 2.0e-5
     lr_scheduler_epoch_freq: 1
     model_type: 'bert'
@@ -15,14 +15,15 @@ hyperparameters:
     num_training_steps: 436 # This is the number of optimizer steps. Set it
                               # to max_length.batches (assuming we step every
                               # batch in the LR scheduler definition)
+records_per_epoch: 3488
 searcher:
     name: single
     metric: validation_loss 
     max_length:
-        batches: 436    # There are 3488k examples in the training set and 388 examples in the validation set   
-    smaller_is_better: false
+        epochs: 4           # There are 3488k examples in the training set and 388 examples in the validation set. Train for 5 epochs.   
+    smaller_is_better: true
 min_validation_period:
-    records: 388   
+    records: 3488           # Validation after each epoch           
 data:
     pretrained_model_name: "bert-base-uncased"
     download_data: False

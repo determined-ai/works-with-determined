@@ -99,12 +99,12 @@ class FinSentProcessor(DataProcessor):
     def _create_examples(self, lines, set_type):
         """Creates examples for the training and dev sets."""
         examples = []
-        print(lines)
+        # print(lines)
         for (i, line) in enumerate(lines):
             if i == 0:
                 continue
             guid = "%s-%s" % (set_type, str(i))
-            print(line)
+            # print(line)
             text = line[1]
             label = line[2]
             try:

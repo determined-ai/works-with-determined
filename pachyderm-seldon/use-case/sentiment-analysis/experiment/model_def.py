@@ -88,8 +88,6 @@ class FinBERTPyTorch(PyTorchTrial):
 
         input_ids, attention_mask, token_type_ids, label_ids, agree_ids = batch
         logits = self.model(input_ids, attention_mask, token_type_ids)[0]
-        print("logits:", logits)
-        print(logits.shape)
 
         loss = self.loss_fct(logits.view(-1, self.num_labels), label_ids.view(-1))
 
