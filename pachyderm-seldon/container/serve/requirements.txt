@@ -1,4 +1,4 @@
-determined==0.18.1
+determined==0.19.2
 seldon-core==1.13.1
 
 # Experiment dependant

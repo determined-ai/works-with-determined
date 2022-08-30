@@ -14,11 +14,13 @@ data:
       host_path: {{ required "A valid Values.checkpointStorage.hostPath entry is required!" .Values.checkpointStorage.hostPath | quote }}
       {{- else if eq .Values.checkpointStorage.type "gcs" }}
       bucket: {{ required "A valid Values.checkpointStorage.bucket entry is required!" .Values.checkpointStorage.bucket }}
+      prefix: {{ .Values.checkpointStorage.prefix | quote }}
       {{- else if eq .Values.checkpointStorage.type "s3" }}
       bucket: {{ required "A valid Values.checkpointStorage.bucket entry is required!" .Values.checkpointStorage.bucket }}
       access_key: {{ .Values.checkpointStorage.accessKey | quote }}
       secret_key: {{ .Values.checkpointStorage.secretKey | quote }}
       endpoint_url: {{ .Values.checkpointStorage.endpointUrl | quote }}
+      prefix: {{ .Values.checkpointStorage.prefix | quote }}
       {{- else if eq .Values.checkpointStorage.type "azure" }}
       {{- if and .Values.checkpointStorage.connection_string .Values.checkpointStorage.account_url }}
       {{ required "Exactly one of .Values.checkpointStorage.connection_string or .Values.checkpointStorage.account_url must be specified!" "" }}
@@ -82,8 +84,8 @@ data:
         {{- end }}
       {{- end }}
 
-    {{$cpuImage := (split "/" "determinedai/environments:py-3.8-pytorch-1.10-lightning-1.5-tf-2.8-cpu-ed66d8a")._1}}
-    {{- $gpuImage := (split "/" "determinedai/environments:cuda-11.3-pytorch-1.10-lightning-1.5-tf-2.8-gpu-ed66d8a")._1 -}}
+    {{$cpuImage := (split "/" "determinedai/environments:py-3.8-pytorch-1.10-tf-2.8-cpu-9119094")._1}}
+    {{- $gpuImage := (split "/" "determinedai/environments:cuda-11.3-pytorch-1.10-tf-2.8-gpu-9119094")._1 -}}
     {{ if .Values.taskContainerDefaults -}}
     task_container_defaults:
       {{- if .Values.taskContainerDefaults.networkMode }}
@@ -91,12 +93,6 @@ data:
       {{- end }}
       {{- if .Values.taskContainerDefaults.dtrainNetworkInterface }}
       dtrain_network_interface: {{ .Values.taskContainerDefaults.dtrainNetworkInterface }}
-      {{- end }}
-      {{- if .Values.taskContainerDefaults.ncclPortRange }}
-      nccl_port_range: {{ .Values.taskContainerDefaults.ncclPortRange }}
-      {{- end }}
-      {{- if .Values.taskContainerDefaults.glooPortRange }}
-      gloo_port_range: {{ .Values.taskContainerDefaults.glooPortRange }}
       {{- end }}
       {{- if .Values.taskContainerDefaults.cpuPodSpec }}
       cpu_pod_spec: {{ .Values.taskContainerDefaults.cpuPodSpec | toJson }}
@@ -130,6 +126,11 @@ data:
     {{- if .Values.telemetry }}
     telemetry:
       enabled: {{ .Values.telemetry.enabled }}
+    {{- end }}
+
+    {{- if .Values.observability }}
+    observability:
+      enable_prometheus: {{ required "A valid .Values.observability.enable_prometheus must be provided if setting .Values.observability!" .Values.observability.enable_prometheus }}
     {{- end }}
 
     {{- if .Values.clusterName }}
