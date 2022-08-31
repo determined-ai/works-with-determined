@@ -14,7 +14,7 @@ The overall integration will rely on the following Google Cloud infrastructure:
 - Pachyderm will use a bucket to store the repositories
 - Determined will use a bucket to store the models' checkpoints
 - Seldon will use a bucket to store data for the model drift and outlier detectors
-- Google Cloud Registry will be used to store the container images for the two Pachyderm's pipelines and the Seldon's serving image
+- Google Cloud Registry will be used to store the container images for the two Pachyderm pipelines and the Seldon serving image
 
 In order to keep the explanation simple, let's break the integration description into a serie of steps:
 
