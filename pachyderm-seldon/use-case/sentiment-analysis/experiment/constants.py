@@ -5,7 +5,7 @@ from transformers import (
 )
 
 MODEL_CLASSES = {
-    "bert": (BertConfig, 
+    "bert_for_classification": (BertConfig, 
     BertTokenizer, 
     BertForSequenceClassification),
 }

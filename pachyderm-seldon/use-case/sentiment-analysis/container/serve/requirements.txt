@@ -1,0 +1,15 @@
+determined==0.19.5
+seldon-core==1.13.1
+
+# Experiment dependant
+scikit-image==0.19.2
+python_pachyderm==7.3.0
+transformers==4.11.3
+sentencepiece==0.1.91
+nltk
+
+# This is required to fix an issue with Flask
+Werkzeug==2.0.3
+pandas~=1.4.3
+opencv-python-headless~=4.6.0.66
+scikit-learn~=1.1.2

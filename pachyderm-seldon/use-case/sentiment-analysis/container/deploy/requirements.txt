@@ -1,0 +1,3 @@
+seldon-deploy-sdk==1.5.0
+requests==2.27.1
+PyYAML==5.4.1

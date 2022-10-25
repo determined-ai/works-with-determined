@@ -1,10 +1,12 @@
-name: FinBertPyTorch_Const
+name: Pipeline-Run-Finbert-1GPU
+workspace: Cyrill
+project: pipeline-finbert
 hyperparameters:
     max_seq_length: 64
     global_batch_size: 64
     learning_rate: 2.0e-5
     lr_scheduler_epoch_freq: 1
-    model_type: 'bert'
+    model_type: "bert_for_classification"
     adam_epsilon: 1.0e-8
     weight_decay: 0
     num_warmup_steps: 0
@@ -12,21 +14,26 @@ hyperparameters:
     n_best_size: 20
     null_score_diff_threshold: 0.0
     max_grad_norm: 1.0
-    num_training_steps: 218 # This is the number of optimizer steps. Set it
-                              # to max_length.batches (assuming we step every
-                              # batch in the LR scheduler definition)
+    num_training_steps: 218
 records_per_epoch: 3488
 searcher:
     name: single
-    metric: validation_loss 
+    metric: validation_loss
     max_length:
-        epochs: 4           # There are 3488k examples in the training set and 388 examples in the validation set. Train for 5 epochs.   
+        epochs: 4 # There are 3488k examples in the training set and 388 examples in the validation set.
     smaller_is_better: true
 min_validation_period:
-    epochs: 1           # Validation after each epoch           
+    epochs: 1 # Validation after each epoch
 data:
     pretrained_model_name: "bert-base-uncased"
     download_data: False
     task: "classification"
-    local_path: ./data/sentiment_data
+    pachyderm:
+        host:
+        port:
+        repo:
+        branch:
+        token:
 entrypoint: model_def:FinBERTPyTorch
+profiling:
+    enabled: true

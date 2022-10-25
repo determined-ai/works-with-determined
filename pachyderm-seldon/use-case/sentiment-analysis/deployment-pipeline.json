@@ -1,21 +1,25 @@
 {
   "pipeline": {
-    "name": "market-sentiment-deploy"
+    "name": "finbert-deploy"
   },
   "description": "Deploys a model into production via the Seldon Deploy REST APIs.",
   "input": {
     "pfs": {
       "name": "data",
-      "repo": "market-sentiment-model",
+      "repo": "finbert-train",
       "branch": "master",
       "glob": "/"
     }
   },
   "transform": {
-    "cmd": ["/bin/sh"],
-    "stdin": ["python deploy.py --deploy-name marketsentiment-deploy --detect-bucket-uri gs://determined-seldon-detector --detect-batch-size 4 --serving-image gcr.io/determined-ai/pachyderm-seldon/serve:0.0.1"],
-    "image": "gcr.io/determined-ai/pachyderm-seldon/deploy:0.0.1",
-    "secrets": [ 
+    "cmd": [
+      "/bin/sh"
+    ],
+    "stdin": [
+      "python deploy.py --deploy-name finbert --detect-bucket-uri gs://determined-seldon-detector --detect-batch-size 4 --serving-image hugcyrill/pds:serve_finbert_0.0.1"
+    ],
+    "image": "hugcyrill/pds:deploy_0.0.4",
+    "secrets": [
       {
         "name": "pipeline-secret",
         "key": "det_master",
@@ -33,6 +37,11 @@
       },
       {
         "name": "pipeline-secret",
+        "key": "pac_token",
+        "env_var": "PAC_TOKEN"
+      },
+      {
+        "name": "pipeline-secret",
         "key": "sel_url",
         "env_var": "SEL_URL"
       },
@@ -47,5 +56,6 @@
         "env_var": "SEL_NAMESPACE"
       }
     ]
-  }
+  },
+  "pod_patch": "[  {   \"op\": \"add\",   \"path\": \"/volumes/-\",   \"value\": {    \"name\": \"det-checkpoints\",    \"hostpath\": {     \"path\": \"/mnt/mapr_nfs/determined/det_checkpoints\",     \"type\": \"Directory\"    }   }  },  {   \"op\": \"add\",   \"path\": \"/containers/0/volumeMounts/-\",   \"value\": {    \"mountPath\": \"/determined_shared_fs\",    \"name\": \"det-checkpoints\"   }  } ]"
 }

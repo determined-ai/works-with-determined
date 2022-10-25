@@ -1,21 +1,25 @@
 {
   "pipeline": {
-    "name": "market-sentiment-model"
+    "name": "finbert-train"
   },
   "description": "Detects changed files into a repository and triggers a retraining on that dataset",
   "input": {
     "pfs": {
       "name": "data",
-      "repo": "market-sentiment",
+      "repo": "finbert-data",
       "branch": "master",
       "glob": "/",
       "empty_files": true
     }
   },
   "transform": {
-    "cmd": ["/bin/sh"],
-    "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref master --sub-dir pachyderm-seldon/use-case/sentiment-analysis/experiment --config const.yaml --repo market-sentiment --model market-sentiment"],
-    "image": "gcr.io/determined-ai/pachyderm-seldon/train:0.0.1",
+    "cmd": [
+      "/bin/sh"
+    ],
+    "stdin": [
+      "python train.py --git-url https://git@github.com:/hugcyrill/pds-use-cases.git --git-ref main --sub-dir use-cases/finbert/experiment --config const.yaml --repo finbert-data --model finbert"
+    ],
+    "image": "hugcyrill/pds:train_0.0.2",
     "secrets": [
       {
         "name": "pipeline-secret",
@@ -38,5 +42,6 @@
         "env_var": "PAC_TOKEN"
       }
     ]
-  }
+  },
+  "pod_patch": "[  {   \"op\": \"add\",   \"path\": \"/volumes/-\",   \"value\": {    \"name\": \"det-checkpoints\",    \"hostpath\": {     \"path\": \"/mnt/mapr_nfs/determined/det_checkpoints\",     \"type\": \"Directory\"    }   }  },  {   \"op\": \"add\",   \"path\": \"/containers/0/volumeMounts/-\",   \"value\": {    \"mountPath\": \"/determined_shared_fs\",    \"name\": \"det-checkpoints\"   }  } ]"
 }
