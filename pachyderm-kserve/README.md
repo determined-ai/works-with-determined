@@ -6,6 +6,13 @@
 * [KServe](https://kserve.github.io/website/0.9/) for hosting models for inference
 
 
+## Versions Tested on
+EKS Kubernetes version - 1.21<br>
+Determined - 0.19.9<br>
+pachctl - 2.4.3 <br>
+pachd- 2.4.4 <br>
+KServe - 0.9 <br>
+
 ## Installation
 
 ### Determined

@@ -27,6 +27,8 @@ This repository highlights tools in the ML ecosystem that work well with [Determ
   * An example of using Determined within an Argo workflow to train a model then automatically deploy it with Seldon Core can be found [in the Kubeflow pipelines example](kubeflow_pipelines/README.md)
 * [Airflow](https://airflow.apache.org/)
   * An example of using Determined within an Airflow workflow to train a model then deploy it into Kubernetes with Seldon core can be found [in the airflow example](airflow/README.md)
+* [Pachyderm](https://www.pachyderm.com)
+  * An E2E example of using Determined within an Pachyderm pipelines to train a model using pachyderm repo for data management and deploy using KServe Inference.
 
 ## Platforms
 
