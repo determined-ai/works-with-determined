@@ -5,12 +5,12 @@ This documentation will go through the steps required to set up an EKS cluster a
 ## Prerequisites
 
 Prerequisites for setting up an EKS cluster and installing Pachyderm and Determined include:
-* Being subscribed to the [EKS-optimized AMI with GPU support] (https://aws.amazon.com/marketplace/pp/B07GRHFXGM) for setting up an EKS cluster with GPU support
-* [AWS CLI] (https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) to interact with AWS services
-* [kubectl] (https://kubernetes.io/docs/tasks/tools/install-kubectl/), version >= 1.19 and <= 1.21 (cf. [Determined documentation] (https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html) ) to run commands on the EKS cluster
-* [eksctl] (https://eksctl.io/introduction/#installation) for creating the EKS cluster
-* [Helm] (https://helm.sh/docs/intro/install/) to install Determined on the cluster
-* [pachctl] (https://docs.pachyderm.com/2.3.x/getting-started/local-installation/#install-pachctl) to interact with Pachyderm
+* Being subscribed to the [EKS-optimized AMI with GPU support](https://aws.amazon.com/marketplace/pp/B07GRHFXGM) for setting up an EKS cluster with GPU support
+* [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) to interact with AWS services
+* [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/), version >= 1.19 and <= 1.21 (cf. [Determined documentation](https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html)) to run commands on the EKS cluster
+* [eksctl](https://eksctl.io/introduction/#installation) for creating the EKS cluster
+* [Helm](https://helm.sh/docs/intro/install/) to install Determined on the cluster
+* [pachctl](https://docs.pachyderm.com/2.3.x/getting-started/local-installation/#install-pachctl) to interact with Pachyderm
 
 ## Versions Tested on
 EKS Kubernetes version - 1.21<br>
@@ -22,7 +22,7 @@ KServe - 0.9 <br>
 ## Installation
 
 ### Setting up EKS cluster
-Follow the [documentation from Determined] (https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html).
+Follow the [documentation from Determined](https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html).
 
 Make sure you attach the following policy to both managedNodeGroups and nodeGroups, next to withAddonPolicies, under iam:
 ```
@@ -40,7 +40,7 @@ Make sure you attach the following policy to both managedNodeGroups and nodeGrou
           - "s3:DeleteObject"
           Resource: 'arn:aws:s3:::<your-bucket-name>/*'
 ```
-Note that if you want to use a separate S3 bucket for Determined checkpoints and for models to be deployed, <your-bucket-name> should be:
+Note that if you want to use a separate S3 bucket for Determined checkpoints and for models to be deployed, `<your-bucket-name>` should be:
 * your S3 bucket to store inference models under managedNodeGroups
 * your S3 bucket to store Determined checkpoints under nodeGroups
 
@@ -48,11 +48,11 @@ Additionally, you will have to duplicate the first service account, under iam.se
 
 Otherwise, if you intend to use a single S3 bucket, you just need to attach the policy to both managedNodeGroups and nodeGroups, and have them point to your bucket. 
 
-Once you enabled the autoscaler, make sure all your pods are running, using ` kubectl get pods --all-namespaces`.
+Once you enabled the autoscaler, make sure all your pods are running, using `kubectl get pods --all-namespaces`.
 If you see that the cluster-autoscaler pod is crashing, it may be due to not having enough memory and you may want to increase <b>spec.template.spec.containers.resources.limits/requests.memory</b> in your `determined-autoscaler.yaml` file. We ran our experiments with 800Mi for those values.
 
 ### Determined
-Follow the [documentation from Determined] (https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/install-on-kubernetes.html#install-on-kubernetes) that uses helm.  Once you have defined your `values.yaml` and `Chart.yaml` files, create determined namespace and verify Determined UI is accessible:
+Follow the [documentation from Determined](https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/install-on-kubernetes.html#install-on-kubernetes) that uses helm.  Once you have defined your `values.yaml` and `Chart.yaml` files, create determined namespace and verify Determined UI is accessible:
 ```sh
 kubectl create ns determined 
 helm install determined <determined-helm-folder> -n determined
@@ -61,9 +61,9 @@ kubectl get service determined-master-service-determined -n determined
 
 You will be able to access Determined Portal at EXTERNAL-IP:8080, for example: http://a2aa85f2cdf2d49bd98b32dc1b3ac8b8-xxxxx.us-east-1.elb.amazonaws.com:8080/det/login
 
-In order to make sure everything so far is working properly, you may want to run a Determined experiment, the [PyTorch MNIST tutorial] (https://docs.determined.ai/latest/_downloads/61c6df286ba829cb9730a0407275ce50/mnist_pytorch.tgz) for example. 
+In order to make sure everything so far is working properly, you may want to run a Determined experiment, the [PyTorch MNIST tutorial](https://docs.determined.ai/latest/_downloads/61c6df286ba829cb9730a0407275ce50/mnist_pytorch.tgz) for example. 
 Depending on you cluster config, number of agents should go up or down depending on resources required for experiments you run.
-Additionally, you should notice that experiments checkpoints are on your S3 bucket.
+Additionally, you should notice that experiments checkpoints are saved on your S3 bucket.
 
 ### Pachyderm
 Follow the instructions [from Pachyderm](https://docs.pachyderm.com/2.4.x/getting-started/cloud-deploy/aws/). You won't need to create a new EKS cluster, but may want to create a new S3 bucket if you don't want to store Pachyderm repositories in the same bucket as Determined checkpoints.
@@ -186,10 +186,6 @@ kubectl get inferenceservices sklearn-iris -n models
 This is what you should see once the InferenceService is `Ready`.
 
 <img src="images/inferenceservice_ready.png" alt="Inference Service Ready"/>
-
-You should also check on the Istio IngressGateway in the Namespace istio-system with the following command.
-
-
 
 If this all looks good, you can run the three commands below to define the variables needed to curl the InferenceService. Those are; Ingress Host, Ingress Port, Service Hostname.
 
