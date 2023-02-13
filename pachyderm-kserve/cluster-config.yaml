@@ -1,0 +1,151 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: <eks-cluster-name> # Specify your cluster name here
+  region: us-east-1 # The default region is us-west-2
+  version: "1.21" # 1.20 and 1.21 are also supported
+
+# Cluster availability zones must be explicitly named in order for single availability zone node groups to work.
+availabilityZones:
+  - "us-east-1a"
+  - "us-east-1b"
+  - "us-east-1c"
+
+iam:
+  withOIDC: true # Enables IAM IODC provider
+  serviceAccounts:
+  - metadata:
+      name: checkpoint-storage-s3-bucket
+      # If no namespace is set, "default" will be used.
+      # Namespace will be created if it does not already exist.
+      namespace: default
+      labels:
+        aws-usage: "determined-checkpoint-storage"
+    attachPolicy: # Inline policy can be defined along with `attachPolicyARNs`
+      Version: "2012-10-17"
+      Statement:
+      - Effect: Allow
+        Action:
+        - "s3:ListBucket"
+        Resource: 'arn:aws:s3:::<checkpoints-bucket>' # Name of your bucket for storing checkpoints
+      - Effect: Allow
+        Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:DeleteObject"
+        Resource: 'arn:aws:s3:::<checkpoints-bucket>/*' # Name of your bucket for storing checkpoints
+  - metadata: # Add the following part if storing models used in inference in another bucket
+      name: inference-models-s3-bucket
+      namespace: default
+      labels:
+        aws-usage: "inference-models-storage"
+    attachPolicy:
+      Version: "2012-10-17"
+      Statement:
+      - Effect: Allow
+        Action:
+        - "s3:ListBucket"
+        Resource: 'arn:aws:s3:::<inference-models-bucket>' # Name of your bucket for storing models used in inference
+      - Effect: Allow
+        Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:DeleteObject"
+        Resource: 'arn:aws:s3:::<inference-models-bucket>/*' # Name of your bucket for storing models used in inference
+  - metadata:
+      name: cluster-autoscaler
+      namespace: kube-system
+      labels:
+        aws-usage: "determined-cluster-autoscaler"
+    attachPolicy:
+      Version: "2012-10-17"
+      Statement:
+      - Effect: Allow
+        Action:
+        - "autoscaling:DescribeAutoScalingGroups"
+        - "autoscaling:DescribeAutoScalingInstances"
+        - "autoscaling:DescribeLaunchConfigurations"
+        - "autoscaling:DescribeTags"
+        - "autoscaling:SetDesiredCapacity"
+        - "autoscaling:TerminateInstanceInAutoScalingGroup"
+        - "ec2:DescribeLaunchTemplateVersions"
+        Resource: '*'
+
+managedNodeGroups:
+  - name: managed-m5-2xlarge
+    instanceType: m5.2xlarge
+    availabilityZones:
+      - us-east-1a
+      - us-east-1b
+      - us-east-1c
+    minSize: 1
+    maxSize: 2
+    volumeSize: 200
+    iam:
+      attachPolicy:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - "s3:ListBucket"
+          Resource: 'arn:aws:s3:::<inference-models-bucket>' # Name of your bucket for storing models used in inference
+        - Effect: Allow
+          Action:
+          - "s3:GetObject"
+          - "s3:PutObject"
+          - "s3:DeleteObject"
+          Resource: 'arn:aws:s3:::<inference-models-bucket>/*' # Name of your bucket for storing models used in inference
+      withAddonPolicies:
+        autoScaler: true
+        cloudWatch: true
+    ssh:
+      allow: true # will use ~/.ssh/id_rsa.pub as the default ssh key
+    labels:
+      nodegroup-type: m5.2xlarge
+      nodegroup-role: cpu-worker
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/user-eks: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup-type: m5.2xlarge
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup-role: cpu-worker
+
+nodeGroups:
+  - name: p2-8xlarge-us-east-1a
+    instanceType: p2.8xlarge # 8 GPUs per machine
+    # Restrict to a single AZ to optimize data transfer between instances
+    availabilityZones:
+      - us-east-1a
+    minSize: 0
+    maxSize: 2
+    volumeSize: 200
+    volumeType: gp2
+    iam:
+      attachPolicy:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - "s3:ListBucket"
+          Resource: 'arn:aws:s3:::<checkpoints-bucket>' # Name of your bucket for storing checkpoints
+        - Effect: Allow
+          Action:
+          - "s3:GetObject"
+          - "s3:PutObject"
+          - "s3:DeleteObject"
+          Resource: 'arn:aws:s3:::<checkpoints-bucket>/*' # Name of your bucket for storing checkpoints
+      withAddonPolicies:
+        autoScaler: true
+        cloudWatch: true
+    ssh:
+      allow: true # This will use ~/.ssh/id_rsa.pub as the default ssh key.
+    labels:
+      nodegroup-type: p2.8xlarge-us-east-1a
+      nodegroup-role: gpu-worker
+      # https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler/cloudprovider/aws#special-note-on-gpu-instances
+      k8s.amazonaws.com/accelerator: nvidia-tesla-k80
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/user-eks: "owned"
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup-type: p2.8xlarge-us-east-1a
+      k8s.io/cluster-autoscaler/node-template/label/nodegroup-role: gpu-worker

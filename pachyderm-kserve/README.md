@@ -1,70 +1,104 @@
 # E2E pipeline using Pachyderm, Determined and Kserve on EKS.
 
-## Prerequisites
-* [Determined cluster on EKS](https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html) for training jobs
-* [Pachyderm](https://docs.pachyderm.com/2.4.x/getting-started/cloud-deploy/aws/) for running pipelines on data management, model training and deploying models for inference.
-* [KServe](https://kserve.github.io/website/0.9/) for hosting models for inference
+This documentation will go through the steps required to set up an EKS cluster and install Pachyderm, Determined and KServe on it. Following this guide, you will have an end-to-end MLOps pipeline with automatic data versioning, model training and deployment for inference.
 
+## Prerequisites
+
+Prerequisites for setting up an EKS cluster and installing Pachyderm and Determined include:
+* Being subscribed to the [EKS-optimized AMI with GPU support] (https://aws.amazon.com/marketplace/pp/B07GRHFXGM) for setting up an EKS cluster with GPU support
+* [AWS CLI] (https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html) to interact with AWS services
+* [kubectl] (https://kubernetes.io/docs/tasks/tools/install-kubectl/), version >= 1.19 and <= 1.21 (cf. [Determined documentation] (https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html) ) to run commands on the EKS cluster
+* [eksctl] (https://eksctl.io/introduction/#installation) for creating the EKS cluster
+* [Helm] (https://helm.sh/docs/intro/install/) to install Determined on the cluster
+* [pachctl] (https://docs.pachyderm.com/2.3.x/getting-started/local-installation/#install-pachctl) to interact with Pachyderm
 
 ## Versions Tested on
 EKS Kubernetes version - 1.21<br>
-Determined - 0.19.9<br>
-pachctl - 2.4.3 <br>
-pachd- 2.4.4 <br>
+Determined - 0.19.10<br>
+pachctl - 2.3.9 <br>
+pachd- 2.4.5 <br>
 KServe - 0.9 <br>
 
 ## Installation
 
-### Determined
-Install using [helm](https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/install-on-kubernetes.html#install-on-kubernetes). 
+### Setting up EKS cluster
+Follow the [documentation from Determined] (https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/setup-eks-cluster.html).
 
-Please make sure you attachPolicy for S3 to the unmanaged nodegroup. Example below
-
+Make sure you attach the following policy to both managedNodeGroups and nodeGroups, next to withAddonPolicies, under iam:
 ```
-nodeGroups:
-  - name: g4dn-xlarge-us-east-1b
-    instanceType: g4dn.xlarge # 8 GPUs per machine
-    # Restrict to a single AZ to optimize data transfer between instances
-    availabilityZones:
-      - us-east-1b
-    minSize: 1
-    maxSize: 3
-    volumeSize: 200
-    volumeType: gp2
-    iam:
       attachPolicy:
         Version: "2012-10-17"
         Statement:
         - Effect: Allow
           Action:
           - "s3:ListBucket"
-          Resource: 'arn:aws:s3:::eks-pdk-demo'
+          Resource: 'arn:aws:s3:::<your-bucket-name>'
         - Effect: Allow
           Action:
           - "s3:GetObject"
           - "s3:PutObject"
           - "s3:DeleteObject"
-          Resource: 'arn:aws:s3:::eks-pdk-demo/*'
+          Resource: 'arn:aws:s3:::<your-bucket-name>/*'
 ```
-Create determined namespace and verify Determined UI is accessible
+Note that if you want to use a separate S3 bucket for Determined checkpoints and for models to be deployed, <your-bucket-name> should be:
+* your S3 bucket to store inference models under managedNodeGroups
+* your S3 bucket to store Determined checkpoints under nodeGroups
+
+Additionally, you will have to duplicate the first service account, under iam.serviceAccounts, changing its name and having it use your inference models bucket. See `cluster-config.yaml` for reference.
+
+Otherwise, if you intend to use a single S3 bucket, you just need to attach the policy to both managedNodeGroups and nodeGroups, and have them point to your bucket. 
+
+Once you enabled the autoscaler, make sure all your pods are running, using ` kubectl get pods --all-namespaces`.
+If you see that the cluster-autoscaler pod is crashing, it may be due to not having enough memory and you may want to increase <b>spec.template.spec.containers.resources.limits/requests.memory</b> in your `determined-autoscaler.yaml` file. We ran our experiments with 800Mi for those values.
+
+### Determined
+Follow the [documentation from Determined] (https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/install-on-kubernetes.html#install-on-kubernetes) that uses helm.  Once you have defined your `values.yaml` and `Chart.yaml` files, create determined namespace and verify Determined UI is accessible:
 ```sh
 kubectl create ns determined 
 helm install determined <determined-helm-folder> -n determined
 kubectl get service determined-master-service-determined -n determined
 ```
-For example - you can access Determined Portal at http://a2aa85f2cdf2d49bd98b32dc1b3ac8b8-xxxxx.us-east-1.elb.amazonaws.com:8080/det/login
+
+You will be able to access Determined Portal at EXTERNAL-IP:8080, for example: http://a2aa85f2cdf2d49bd98b32dc1b3ac8b8-xxxxx.us-east-1.elb.amazonaws.com:8080/det/login
+
+In order to make sure everything so far is working properly, you may want to run a Determined experiment, the [PyTorch MNIST tutorial] (https://docs.determined.ai/latest/_downloads/61c6df286ba829cb9730a0407275ce50/mnist_pytorch.tgz) for example. 
+Depending on you cluster config, number of agents should go up or down depending on resources required for experiments you run.
+Additionally, you should notice that experiments checkpoints are on your S3 bucket.
 
 ### Pachyderm
-Follow the instructions [here](https://docs.pachyderm.com/2.4.x/getting-started/cloud-deploy/aws/)
+Follow the instructions [from Pachyderm](https://docs.pachyderm.com/2.4.x/getting-started/cloud-deploy/aws/). You won't need to create a new EKS cluster, but may want to create a new S3 bucket if you don't want to store Pachyderm repositories in the same bucket as Determined checkpoints.
+
 
 ### KServe
 For more information on KServe, please visit <a href="https://kserve.github.io/website/0.9/">the official KServe documentation</a>.
 
-The Quickstart environment can be installed with a single command. Make sure that your user has access to the K8s cluster and execute the following command:
+In theory, the Quickstart environment can be installed with the following command:
 
 ```bash
 curl -s "https://raw.githubusercontent.com/kserve/kserve/release-0.9/hack/quick_install.sh" | bash
 ```
+
+However, the above mentioned `quick_install.sh` script will check your Kubernetes version and stop if your version is older than 1.22. Since you probably have Kubernetes version 1.21 installed, you will have to edit that `quick_install.sh` script before running it. You can download the script with the follwing command, for example:
+```bash
+curl -s "https://raw.githubusercontent.com/kserve/kserve/release-0.9/hack/quick_install.sh" > kserve_install.sh
+```
+
+Once downloaded locally, modify the script by removing the following part:
+```sh
+KUBE_VERSION=$(kubectl version --short=true)
+if [ ${KUBE_VERSION:43:2} -lt 22 ];
+then
+   echo "😱 install requires at least Kubernetes 1.22";
+   exit 1;
+fi
+```
+
+And simply run it with:
+```bash
+bash kserve_install.sh
+```
+
+This time, it won't stop if your Kubernetes version is 1.21 or older.
 
 The script will install everything you need for KServe, including Knative and Istio, and should take aproximately 5-10 minutes to complete and should create the following new Namespaces:
 - cert-manager
@@ -83,28 +117,38 @@ kubectl get pods -n knative-serving
 kubectl get pods -n cert-manager
 ```
 
-<b>NOTE:</b> If you are running K8s v. 1.21.xx and your cert-manager, istio-system, knative-serving Pods are `Pending`, do the below.
+<b>NOTE:</b> If you are running K8s v. 1.21.xx and some of your cert-manager, istio-system and/or knative-serving Pods are `Pending` or crashing, follow the instructions below.
 
 #### Getting KServe to work on K8s 1.21.xx
-><b>IMPORTANT:</b> Only complete this step if you are running K8s v. 1.21.xx and your Pods are `Pending`. Otherwise ignore the below.
+><b>IMPORTANT:</b> Only complete this step if you are running K8s v. 1.21.xx and your Pods are `Pending` or crahsing. Otherwise ignore the below.
 
-KServe officially requires K8s v. 1.22.xx for the Quickstart environment. Version 1.21.xx works fine but the Pods in the Namespaces cert-manager, istio-system, knative-serving will hang in the `Pending` state as they expect K8s 1.22.xx or higher.
+KServe officially requires K8s v. 1.22.xx for the Quickstart environment. Version 1.21.xx works fine but some of the Pods in the Namespaces cert-manager, istio-system and/or knative-serving will hang in the `Pending` state, or crash, as they expect K8s 1.22.xx or higher.
 To remedy that situation, you have to set the environment variable `KUBERNETES_MIN_VERSION` to `v1.21.14` for all the deployments of these Pods.
 
-You can try OpenLens available <a href="https://github.com/MuhammedKalkan/OpenLens">here</a> to interact with K8s cluster or update the KServe k8s yaml files
-From within OpenLens, you can directly edit the deployments in question. Find a deployment, click the edit (pencil) button on the top right and add the following under <b>spec/template/spec/containers/env</b>
+In order to list those deployments you can run the following command (replacing knative-serving with other namespaces if you have pods failing in them):
+```bash
+kubectl get deployments -n knative-serving
+```
 
+To edit a deployment, just run (replacing activator with the deployment you need to edit):
+```bash
+kubectl edit deployment activator -n knative-serving
+```
+You will then need to add the following under <b>spec/template/spec/containers/env</b>:
 ```bash
             - name: KUBERNETES_MIN_VERSION
               value: v1.21.14
 ```
 
-Here is a screenshot of my edit for the deployment "activator":
+Here is a screenshot of an edit for the deployment "activator":
 
 <img src="images/env_var.png" alt="Add environment variable to deployments"/>
 
 Once the update is made, the Pod will be recreated automatically and should eventually show up as `Running`.
-Repeat this process for all Pods/Deployments that are in `Pending` state. 
+Repeat this process for all Pods/Deployments that are either in `Pending` state or failing in general. 
+
+In order to edit the deployments, you can also try with other tools like OpenLens available <a href="https://github.com/MuhammedKalkan/OpenLens">here</a> to interact with K8s cluster and update the KServe k8s yaml files, but that's not mandatory and the above mentioned commands will work just fine.
+
 
 #### Testing KServe
 Now that the KServe Pods are up, it is a good time to validate basic functionality of the serving environment.
@@ -141,6 +185,12 @@ kubectl get inferenceservices sklearn-iris -n models
 
 This is what you should see once the InferenceService is `Ready`.
 
+<img src="images/inferenceservice_ready.png" alt="Inference Service Ready"/>
+
+You should also check on the Istio IngressGateway in the Namespace istio-system with the following command.
+
+
+
 If this all looks good, you can run the three commands below to define the variables needed to curl the InferenceService. Those are; Ingress Host, Ingress Port, Service Hostname.
 
 ```bash
@@ -170,9 +220,9 @@ curl -v -H "Host: ${SERVICE_HOSTNAME}" http://${INGRESS_HOST}:${INGRESS_PORT}/v1
 
 If all goes well, you should get your prediction returned as shown below with an HTTP status of 200.
 
-`{"predictions": [1, 1]}`
+<img src="images/iris_prediction.png" alt="Iris Prediction Result"/>
 
-
+Please only continue to the next step if the prediction is successful as the next steps rely on a working KServe environment.
 
 ## Running the example
 
@@ -230,7 +280,7 @@ Now we can focus on the training pipeline. The training pipeline will execute th
 3. After training completes, the best checkpoint of the experiment will be registered as a new model version in the Determined.AI model registry.
 4. The best checkpoint will also be stored in a versioned Pachyderm output repository called `dogs-and-cats-model`.
 
-Below you can find the training pipeline definition.
+You can find the training pipeline defined in `training-pipeline.json`, available in this repo.
 
 Apply the `training-pipeline.json` file
 
@@ -258,6 +308,8 @@ The deployment pipeline is concerned with deploying a trained model for inferenc
 7. Connects to the K8s cluster and creates the InferenceService. If the pipeline runs for the first time, it will create a brand new InferenceService. If an older version of the InferenceService already exists, it will do a rolling update of the InferenceService using the updated model.
 8. Waits for the InferenceService to be available and provides the URL.
 
+You can find the deployment pipeline defined in `deployment-pipeline.json`, available in this repo. You will need to refer to the S3 bucket you want to use for saving inference models as `--cloud-model-bucket` value in `stdin`.
+
 Apply `deployment-pipeline.json` file.
 
 ```bash
@@ -270,6 +322,15 @@ You can validate the successful creation of the deployment pipeline through the 
 pachctl list pipelines
 ```
 
+The output should look like this, with both pipelines in state `running` with last job `success`:
+
+<img src="images/kserve_pipelines.png" alt="KServe Pipelines"/>
+
+In the Pachyderm Console (WebUI), you should be able to see your DAG:
+
+<img src="images/pachyderm_dag.png" alt="Pachyderm DAG in Console"/>
+
+This concludes the setup work for PDK. Let's test it! 
 
 ## Step 4: Grant access for pachyderm worker to access inference services
 
