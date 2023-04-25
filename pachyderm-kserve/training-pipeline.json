@@ -14,7 +14,7 @@
     },
     "transform": {
       "cmd": ["/bin/sh"],
-      "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref master --sub-dir pachyderm-seldon/use-case/image-classification/experiment --config const.yaml --repo dogs-and-cats --model dogs-and-cats"],
+      "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref main --sub-dir pachyderm-seldon/use-case/image-classification/experiment --config const.yaml --repo dogs-and-cats --model dogs-and-cats"],
       "image": "hugcyrill/pds:train_0.0.3",
       "secrets": [
         {
