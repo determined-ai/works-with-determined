@@ -54,7 +54,6 @@ If you see that the cluster-autoscaler pod is crashing, it may be due to not hav
 ### Determined
 Follow the [documentation from Determined](https://docs.determined.ai/latest/cluster-setup-guide/deploy-cluster/sysadmin-deploy-on-k8s/install-on-kubernetes.html#install-on-kubernetes) that uses helm.  Once you have defined your `values.yaml` and `Chart.yaml` files, create determined namespace and verify Determined UI is accessible:
 ```sh
-kubectl create ns determined 
 helm install determined <determined-helm-folder> -n determined
 kubectl get service determined-master-service-determined -n determined
 ```

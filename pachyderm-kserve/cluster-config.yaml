@@ -35,6 +35,24 @@ iam:
         - "s3:PutObject"
         - "s3:DeleteObject"
         Resource: 'arn:aws:s3:::<checkpoints-bucket>/*' # Name of your bucket for storing checkpoints
+  - metadata:
+      name: checkpoint-storage-s3-bucket
+      namespace: determined
+      labels:
+        aws-usage: "determined-checkpoint-storage"
+    attachPolicy: # Inline policy can be defined along with `attachPolicyARNs`
+      Version: "2012-10-17"
+      Statement:
+      - Effect: Allow
+        Action:
+        - "s3:ListBucket"
+        Resource: 'arn:aws:s3:::<checkpoints-bucket>' # Name of your bucket for storing checkpoints
+      - Effect: Allow
+        Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+        - "s3:DeleteObject"
+        Resource: 'arn:aws:s3:::<checkpoints-bucket>/*' # Name of your bucket for storing checkpoints
   - metadata: # Add the following part if storing models used in inference in another bucket
       name: inference-models-s3-bucket
       namespace: default
