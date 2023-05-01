@@ -96,11 +96,12 @@ class DogCatModel(PyTorchTrial):
             data_config["pachyderm"]["repo"],
             data_config["pachyderm"]["branch"],
             data_dir,
-            data_config["pachyderm"]["token"]
+            data_config["pachyderm"]["token"],
+            data_config["pachyderm"]["project"]
         )
         print(f'Data dir set to : {data_dir}')
 
-        return [des for src, des in files ]
+        return [des for src, des in files]
 
     # -------------------------------------------------------------------------
 

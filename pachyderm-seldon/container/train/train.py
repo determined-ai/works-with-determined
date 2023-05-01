@@ -242,7 +242,7 @@ def main():
 
     if exp is None:
         print("Aborting pipeline as experiment did not succeed")
-        return
+        exit(1)
 
     # --- Get best checkpoint from experiment. It may not exist if the experiment did not succeed
 
