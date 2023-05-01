@@ -63,7 +63,11 @@ def parse_args():
         type=str,
         help="Name of the Pachyderm's repository containing the dataset",
     )
-
+    parser.add_argument(
+        "--project",
+        type=str,
+        help="Name of the Pachyderm's project containing the repo",
+    )
     parser.add_argument(
         "--model",
         type=str,
@@ -97,13 +101,14 @@ def read_config(conf_file):
 
 # =====================================================================================
 
-def setup_config(config_file, repo, pipeline, job_id):
+def setup_config(config_file, repo, pipeline, job_id, project):
     config = read_config(config_file)
     config["data"]["pachyderm"]["host"]   = os.getenv("PACHD_LB_SERVICE_HOST")
     config["data"]["pachyderm"]["port"]   = os.getenv("PACHD_LB_SERVICE_PORT")
     config["data"]["pachyderm"]["repo"]   = repo
     config["data"]["pachyderm"]["branch"] = job_id
     config["data"]["pachyderm"]["token"]  = os.getenv("PAC_TOKEN")
+    config["data"]["pachyderm"]["project"]= project
 
     config["labels"] = [ repo, job_id, pipeline ]
 
@@ -235,7 +240,7 @@ def main():
 
     # --- Read and setup experiment config file. Then, run experiment
 
-    config = setup_config(config_file, args.repo, pipeline, job_id)
+    config = setup_config(config_file, args.repo, pipeline, job_id, args.project)
     client = create_client()
     model  = get_or_create_model(client, args.model, pipeline, args.repo)
     exp    = run_experiment(client, config, workdir, model)
