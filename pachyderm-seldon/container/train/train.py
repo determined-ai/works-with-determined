@@ -12,7 +12,6 @@ import yaml
 class DeterminedClient(Determined):
     def __init__(self, master, user, password):
         super().__init__(master=master, user=user, password=password)
-
     def continue_experiment(self, config, parent_id, checkpoint_uuid):
         config["searcher"]["source_checkpoint_uuid"] = checkpoint_uuid
         resp = self._session.post(
@@ -23,10 +22,8 @@ class DeterminedClient(Determined):
                 "parentId": parent_id,
             },
         )
-
         exp_id = resp.json()["experiment"]["id"]
         exp = experiment.ExperimentReference(exp_id, self._session)
-
         return exp
 
 # =====================================================================================
@@ -125,13 +122,14 @@ def create_client():
 
 # =====================================================================================
 
-def execute_experiment(client, configfile, code_path, checkpoint):
+def execute_experiment(client, configfile, code_path, checkpoint, pach_version=None):
     try:
         if checkpoint is None:
             parent_id = None
             exp = client.create_experiment(configfile, code_path)
         else:
             parent_id = checkpoint.training.experiment_id
+            configfile["data"]["pachyderm"]["previous_commit"] = pach_version
             exp = client.continue_experiment(configfile, parent_id, checkpoint.uuid)
 
         print(f"Created experiment with id='{exp.id}' (parent_id='{parent_id}'). Waiting for its completion...")
@@ -157,7 +155,7 @@ def run_experiment(client, configfile, code_path, model):
         return execute_experiment(client, configfile, code_path, None)
     else:
         print("Continuing experiment on DeterminedAI...")
-        return execute_experiment(client, configfile, None, version.checkpoint)
+        return execute_experiment(client, configfile, None, version.checkpoint, version.name)
 
 # =====================================================================================
 
