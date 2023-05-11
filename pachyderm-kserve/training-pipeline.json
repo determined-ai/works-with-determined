@@ -15,7 +15,7 @@
     "transform": {
       "cmd": ["/bin/sh"],
       "stdin": ["python train.py --git-url https://git@github.com:/determined-ai/works-with-determined.git --git-ref main --sub-dir pachyderm-seldon/use-case/image-classification/experiment --config const.yaml --repo dogs-and-cats --model dogs-and-cats"],
-      "image": "hugcyrill/pds:train_0.0.3",
+      "image": "vmtyler/pdk:train_0.0.9",
       "secrets": [
         {
           "name": "pipeline-secret",

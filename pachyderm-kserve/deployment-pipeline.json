@@ -18,7 +18,7 @@
       "stdin": [
         "python deploy.py --deployment-name dogcat-deploy --cloud-model-host aws --cloud-model-bucket eks-pdk-demo"
       ],
-      "image": "anoophpe/pdk:deploy_1.0.0",
+      "image": "vmtyler/pdk:deploy_0.0.4",
       "secrets": [
         {
           "name": "pipeline-secret",
