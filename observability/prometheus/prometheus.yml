@@ -17,6 +17,7 @@ scrape_configs:
   honor_timestamps: true
   scrape_interval: 1s
   scrape_timeout: 1s
+  # do we want one for /debug/prom/metrics?
   metrics_path: prom/det-state-metrics
   scheme: http
   follow_redirects: true
@@ -27,9 +28,12 @@ scrape_configs:
     target_label: experiment_id
     replacement: $1
     action: replace
+  authorization:
+    type: Bearer
+    credentials_file: $PATH_TO_TOKEN
   static_configs:
   - targets:
-    - localhost:8080
+    - $MASTER_URL_WITHOUT_SCHEME
 - job_name: cadvisor-dcgm
   honor_timestamps: true
   scrape_interval: 1s
@@ -53,4 +57,7 @@ scrape_configs:
   http_sd_configs:
   - follow_redirects: true
     refresh_interval: 1m
-    url: http://det-master-address:8080/prom/det-http-sd-config
+    authorization:
+      type: Bearer
+      credentials_file: $PATH_TO_TOKEN
+    url: $MASTER_URL/prom/det-http-sd-config
