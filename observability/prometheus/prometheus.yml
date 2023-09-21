@@ -13,11 +13,23 @@ scrape_configs:
   static_configs:
   - targets:
     - localhost:9090
+- job_name: det-master-api-server
+  honor_timestamps: true
+  scrape_interval: 1s
+  scrape_timeout: 1s
+  metrics_path: /debug/prom/metrics
+  scheme: http
+  follow_redirects: true
+  authorization:
+    type: Bearer
+    credentials_file: $PATH_TO_TOKEN
+  static_configs:
+  - targets:
+    - $MASTER_URL_WITHOUT_SCHEME
 - job_name: det-master
   honor_timestamps: true
   scrape_interval: 1s
   scrape_timeout: 1s
-  # do we want one for /debug/prom/metrics?
   metrics_path: prom/det-state-metrics
   scheme: http
   follow_redirects: true
