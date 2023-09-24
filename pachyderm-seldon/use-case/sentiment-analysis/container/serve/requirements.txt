@@ -9,7 +9,7 @@ sentencepiece==0.1.91
 nltk
 
 # This is required to fix an issue with Flask
-Werkzeug==2.0.3
+Werkzeug==2.2.3
 pandas~=1.4.3
 opencv-python-headless~=4.6.0.66
 scikit-learn~=1.1.2
