@@ -1,4 +1,6 @@
 name: dogcat_single
+workspace: HPE Workspace
+project: brain-mri
 data:
     pachyderm:
       host:
@@ -16,9 +18,10 @@ searcher:
     name: single
     metric: accuracy
     max_length:
-        batches: 100
+        batches: 1
     smaller_is_better: false
 entrypoint: model_def:DogCatModel
 resources:
-    slots_per_trial: 1
+    resource_pool: aux
+    slots: 3
 max_restarts: 0
