@@ -1,7 +1,7 @@
 jupyter
 determined
 metaflow
-torch==1.4
+torch==1.13.1
 sentencepiece==0.1.91
 transformers==3.1.0
 git+git://github.com/LiyuanLucasLiu/RAdam.git@baf4f65445c00d686d4098841b3ca1f62a886326#egg=radam
